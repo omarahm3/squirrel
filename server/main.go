@@ -51,22 +51,22 @@ func main() {
 		wsHandler(hub, context.Request, context.Writer)
 	})
 
-  server.GET("/client/:clientId", func(context *gin.Context) {
-    clientId := context.Param("clientId")
+	server.GET("/client/:clientId", func(context *gin.Context) {
+		clientId := context.Param("clientId")
 
-    if clientId == "" {
-      context.String(400, "Cannot be empty")
-      return
-    }
+		if clientId == "" {
+			context.String(400, "Cannot be empty")
+			return
+		}
 
-    if _, ok := hub.clients[clientId]; !ok {
-      context.String(404, "Client not found")
-      return
-    }
+		if _, ok := hub.clients[clientId]; !ok {
+			context.String(404, "Client not found")
+			return
+		}
 
 		context.HTML(200, "index.html", gin.H{
-      "clientId": clientId,
-    })
+			"clientId": clientId,
+		})
 	})
 
 	err := server.Run(":3000")

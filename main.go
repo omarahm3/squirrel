@@ -14,14 +14,14 @@ var interrupt chan os.Signal
 func main() {
 	interrupt = make(chan os.Signal) // Channel to listen for interrupt signal to gracefully terminate
 	input := make(chan string)
-  clientId := utils.GenerateUUID()
+	clientId := utils.GenerateUUID()
 
 	signal.Notify(interrupt, os.Interrupt)
 
 	connection := InitClient(input)
 	defer connection.Close()
 
-  go ScanFile(input)
+	go ScanFile(input)
 
 	// Main loop of the client
 	// Here we send & receive packets
@@ -29,14 +29,18 @@ func main() {
 		select {
 		case line := <-input:
 			log.Println(line)
-			SendMessage(connection, LogMessage{
-        Id: clientId,
-        Line: line,
-      })
+			SendMessage(connection, Message{
+				Id:    clientId,
+				Local: true,
+				Event: "log_line",
+				Payload: LogMessage{
+					Line: line,
+				},
+			})
 
 		case <-interrupt:
 			log.Println("Received SIGINT interrupt signal. Closing all pending connections")
-      HandleWebsocketClose(connection)
+			HandleWebsocketClose(connection)
 			return
 		}
 	}

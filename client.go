@@ -9,8 +9,14 @@ import (
 const WEBSOCKET_URL string = "ws://localhost:3000/ws"
 
 type LogMessage struct {
-	Id   string `json:"id"`
 	Line string `json:"line"`
+}
+
+type Message struct {
+	Id      string      `json:"id"`
+	Local   bool        `json:"local"`
+	Payload interface{} `json:"payload"`
+	Event   string      `json:"event"`
 }
 
 func InitClient(input chan string) *websocket.Conn {
@@ -23,7 +29,7 @@ func InitClient(input chan string) *websocket.Conn {
 	return connection
 }
 
-func SendMessage(connection *websocket.Conn, message LogMessage) {
+func SendMessage(connection *websocket.Conn, message Message) {
 	err := connection.WriteJSON(message)
 
 	if err != nil {
