@@ -8,9 +8,15 @@ import (
 
 type Client struct {
 	id         string
+	local      bool
 	connection *websocket.Conn
 	hub        *Hub
 	send       chan []byte
+}
+
+type LogMessage struct {
+	Id   string `json:"id"`
+	Line string `json:"line"`
 }
 
 func (client *Client) ReadPump() {
