@@ -9,8 +9,8 @@ import (
 const WEBSOCKET_URL string = "ws://localhost:3000/ws"
 
 type LogMessage struct {
-	line string
-	id   string
+	Id   string `json:"id"`
+	Line string `json:"line"`
 }
 
 func InitClient(input chan string) *websocket.Conn {

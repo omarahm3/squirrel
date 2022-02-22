@@ -37,8 +37,8 @@ func main() {
 		case line := <-input:
 			log.Println(line)
 			SendMessage(connection, LogMessage{
-        id: clientId.String(),
-        line: line,
+        Id: clientId.String(),
+        Line: line,
       })
 
 		case <-interrupt:
