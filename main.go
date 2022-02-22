@@ -5,6 +5,8 @@ import (
 	"log"
 	"os"
 	"os/signal"
+
+	"github.com/google/uuid"
 )
 
 var interrupt chan os.Signal
@@ -12,6 +14,14 @@ var interrupt chan os.Signal
 func main() {
 	interrupt = make(chan os.Signal) // Channel to listen for interrupt signal to gracefully terminate
 	input := make(chan string)
+  clientId, err := uuid.NewRandom()
+
+  if err != nil {
+    log.Fatalf("Error creating random UUID for this client: %+v", err)
+    os.Exit(1)
+  }
+
+  log.Println(clientId)
 
 	signal.Notify(interrupt, os.Interrupt)
 
