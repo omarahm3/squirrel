@@ -30,20 +30,20 @@ func wsHandler(hub *Hub, r *http.Request, w http.ResponseWriter) {
 	client := &Client{
 		id:         utils.GenerateUUID(),
 		connection: connection,
-    hub: hub,
-    send: make(chan []byte, 256),
+		hub:        hub,
+		send:       make(chan []byte, 256),
 	}
 
-  client.hub.register <- client
+	client.hub.register <- client
 
-  go client.ReadPump()
+	go client.ReadPump()
 }
 
 func main() {
 	server := gin.Default()
-  hub := NewHub()
+	hub := NewHub()
 
-  go hub.Run()
+	go hub.Run()
 
 	server.LoadHTMLFiles("./view/index.html")
 
