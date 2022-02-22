@@ -36,7 +36,10 @@ func main() {
 		select {
 		case line := <-input:
 			log.Println(line)
-			SendMessage(connection, line)
+			SendMessage(connection, LogMessage{
+        id: clientId.String(),
+        line: line,
+      })
 
 		case <-interrupt:
 			log.Println("Received SIGINT interrupt signal. Closing all pending connections")

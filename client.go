@@ -8,6 +8,11 @@ import (
 
 const WEBSOCKET_URL string = "ws://localhost:3000/ws"
 
+type LogMessage struct {
+	line string
+	id   string
+}
+
 func InitClient(input chan string) *websocket.Conn {
 	connection, _, err := websocket.DefaultDialer.Dial(WEBSOCKET_URL, nil)
 
@@ -18,8 +23,8 @@ func InitClient(input chan string) *websocket.Conn {
 	return connection
 }
 
-func SendMessage(connection *websocket.Conn, message string) {
-	err := connection.WriteMessage(websocket.TextMessage, []byte(message))
+func SendMessage(connection *websocket.Conn, message LogMessage) {
+	err := connection.WriteJSON(message)
 
 	if err != nil {
 		log.Println("Error during sending message to websocket:", err)
