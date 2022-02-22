@@ -9,11 +9,6 @@ import (
 	"github.com/omarahm3/live-logs/utils"
 )
 
-type LogMessage struct {
-	Id   string `json:"id"`
-	Line string `json:"line"`
-}
-
 var wsUpgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
