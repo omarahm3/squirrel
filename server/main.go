@@ -26,6 +26,7 @@ func wsHandler(hub *Hub, r *http.Request, w http.ResponseWriter) {
 		id:         utils.GenerateUUID(),
 		connection: connection,
 		hub:        hub,
+		local:      false,
 		send:       make(chan []byte, 256),
 	}
 

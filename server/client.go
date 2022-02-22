@@ -37,6 +37,12 @@ func (client *Client) ReadPump() {
 			break
 		}
 
+    // If this is a local client sending us the very first request
+    if !client.local && message.Id != "" {
+      client.id = message.Id
+      client.local = true
+    }
+
 		log.Println(message)
 
 		err = client.connection.WriteJSON(message)
