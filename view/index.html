@@ -1,15 +1,17 @@
 <html>
   <head>
-   <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
   </head>
 
   <body>
     <h3>Websocket Test</h3>
 
+    <h2>Client: {{ .clientId }}</h2>
+
     <pre id="output"></pre>
 
     <script>
-      const URL = 'ws://localhost:3000/ws'
+    const URL = 'ws://localhost:3000/ws'
       const socket = new WebSocket(URL)
 
       const send = function (data) {

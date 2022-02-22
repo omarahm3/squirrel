@@ -47,8 +47,21 @@ func main() {
 		context.HTML(200, "index.html", nil)
 	})
 
-	server.GET("/ws", func(c *gin.Context) {
-		wsHandler(hub, c.Request, c.Writer)
+	server.GET("/ws", func(context *gin.Context) {
+		wsHandler(hub, context.Request, context.Writer)
+	})
+
+  server.GET("/client/:clientId", func(context *gin.Context) {
+    clientId := context.Param("clientId")
+
+    if clientId == "" {
+      context.String(404, "%s", "Unknown client")
+      return
+    }
+
+		context.HTML(200, "index.html", gin.H{
+      "clientId": clientId,
+    })
 	})
 
 	err := server.Run(":3000")
