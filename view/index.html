@@ -1,0 +1,33 @@
+<html>
+  <head>
+   <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+  </head>
+
+  <body>
+    <h3>Websocket Test</h3>
+
+    <pre id="output"></pre>
+
+    <script>
+      const URL = 'ws://localhost:3000/ws'
+      const socket = new WebSocket(URL)
+
+      const send = function (data) {
+        $('#output').append((new Date()) + " ==> " + data + "\n")
+        socket.send(data)
+      }
+
+      socket.onmessage = function (message) {
+        $('#output').append((new Date()) + " <== " + message.data + "\n")
+      }
+
+      socket.onopen = () => {
+        console.log('Socket is open')
+        setInterval(function () {
+          console.log('Sending Ping')
+          send("Ping")
+        }, 1000)
+      }
+    </script>
+  </body>
+</html>
