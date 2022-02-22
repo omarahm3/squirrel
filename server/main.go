@@ -55,7 +55,12 @@ func main() {
     clientId := context.Param("clientId")
 
     if clientId == "" {
-      context.String(404, "%s", "Unknown client")
+      context.String(400, "Cannot be empty")
+      return
+    }
+
+    if _, ok := hub.clients[clientId]; !ok {
+      context.String(404, "Client not found")
       return
     }
 
