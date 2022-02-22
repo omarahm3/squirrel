@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/omarahm3/live-logs/utils"
 )
 
 type LogMessage struct {
@@ -19,7 +19,7 @@ var wsUpgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
-func wsHandler(r *http.Request, w http.ResponseWriter) {
+func wsHandler(hub *Hub, r *http.Request, w http.ResponseWriter) {
 	connection, err := wsUpgrader.Upgrade(w, r, nil)
 
 	if err != nil {
@@ -27,30 +27,23 @@ func wsHandler(r *http.Request, w http.ResponseWriter) {
 		return
 	}
 
-	for {
-    var message LogMessage
-		err := connection.ReadJSON(&message)
-
-		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Println("Unexpected server close: ", err)
-			}
-
-			break
-		}
-
-		fmt.Println(message)
-
-		err = connection.WriteJSON(message)
-
-		if err != nil {
-			break
-		}
+	client := &Client{
+		id:         utils.GenerateUUID(),
+		connection: connection,
+    hub: hub,
+    send: make(chan []byte, 256),
 	}
+
+  client.hub.register <- client
+
+  go client.ReadPump()
 }
 
 func main() {
 	server := gin.Default()
+  hub := NewHub()
+
+  go hub.Run()
 
 	server.LoadHTMLFiles("./view/index.html")
 
@@ -59,7 +52,7 @@ func main() {
 	})
 
 	server.GET("/ws", func(c *gin.Context) {
-		wsHandler(c.Request, c.Writer)
+		wsHandler(hub, c.Request, c.Writer)
 	})
 
 	err := server.Run(":3000")

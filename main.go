@@ -6,7 +6,7 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/google/uuid"
+	"github.com/omarahm3/live-logs/utils"
 )
 
 var interrupt chan os.Signal
@@ -14,14 +14,7 @@ var interrupt chan os.Signal
 func main() {
 	interrupt = make(chan os.Signal) // Channel to listen for interrupt signal to gracefully terminate
 	input := make(chan string)
-  clientId, err := uuid.NewRandom()
-
-  if err != nil {
-    log.Fatalf("Error creating random UUID for this client: %+v", err)
-    os.Exit(1)
-  }
-
-  log.Println(clientId)
+  clientId := utils.GenerateUUID()
 
 	signal.Notify(interrupt, os.Interrupt)
 
@@ -37,7 +30,7 @@ func main() {
 		case line := <-input:
 			log.Println(line)
 			SendMessage(connection, LogMessage{
-        Id: clientId.String(),
+        Id: clientId,
         Line: line,
       })
 
