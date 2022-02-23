@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -33,6 +34,7 @@ func wsHandler(hub *Hub, r *http.Request, w http.ResponseWriter) {
 	client.hub.register <- client
 
 	go client.ReadPump()
+  go client.WritePump()
 }
 
 func main() {
@@ -58,6 +60,14 @@ func main() {
 			context.String(400, "Cannot be empty")
 			return
 		}
+
+
+    log.Println("------------------------------------------")
+    log.Println("Getting all clients")
+    for id, client := range hub.clients {
+      log.Printf("Key: [%s], Client: [%v]\n", id, client)
+    }
+    log.Println("------------------------------------------")
 
 		if _, ok := hub.clients[clientId]; !ok {
 			context.String(404, "Client not found")
