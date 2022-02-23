@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"time"
 
@@ -32,6 +33,7 @@ type Client struct {
 
 func (client *Client) ReadPump() {
 	defer func() {
+    log.Println("ReadPump::: Removing client, and closing connection")
 		client.hub.unregister <- client
 		client.connection.Close()
 	}()
@@ -148,7 +150,7 @@ func HandleIdentityMessage(client *Client, message Message, payload IdentityMess
     client.peerId = ""
 	} else {
     if payload.PeerId == "" {
-      log.Fatal("PeerId must not be empty")
+      log.Println("PeerId must not be empty, discarding")
       return
     }
 
@@ -162,6 +164,13 @@ func HandleIdentityMessage(client *Client, message Message, payload IdentityMess
 		id     string
 		client *Client
 	}{updateId, client}
+
+  log.Println("--------------------------")
+  log.Printf("ID: %s", client.id)
+  log.Printf("Peer ID: %s", client.peerId)
+  log.Printf("Active: %t", client.active)
+  log.Printf("Local: %t", client.local)
+  log.Println("--------------------------")
 }
 
 func HandleMessage(client *Client) (Message, error) {
@@ -196,6 +205,11 @@ func HandleMessage(client *Client) (Message, error) {
 		HandleIdentityMessage(client, message, identityMessage)
 
 	case "log_line":
+    if !client.active {
+			log.Println("HandleMessage.LogLine::: Unknown client, ignoring messages")
+      return Message{}, errors.New("Client is unknown, ignoring messages")
+    }
+
 		logMessage := LogMessage{}
 		data, err := json.Marshal(message.Payload)
 

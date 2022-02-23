@@ -25,11 +25,18 @@
     }
 
     socket.onopen = () => {
-      console.log('Socket is open')
       setInterval(function () {
         console.log('Sending Ping')
         send("Ping")
       }, 60 * 60 * 1000)
+
+      send(JSON.stringify({
+        event: 'identity',
+        payload: {
+          local: false,
+          peerId: {{ .clientId }}
+        }
+      }))
     }
   </script>
 </body>
