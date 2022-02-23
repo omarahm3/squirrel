@@ -3,8 +3,21 @@ package main
 import (
 	"encoding/json"
 	"log"
+	"time"
 
 	"github.com/gorilla/websocket"
+)
+
+const (
+	WRITE_WAIT       = 10 * time.Second
+	PONG_WAIT        = 60 * time.Second
+	PING_PERIOD      = (PONG_WAIT * 9) / 10
+	MAX_MESSAGE_SIZE = 1024
+)
+
+var (
+	newLine = []byte{'\n'}
+	// space   = []byte{' '}
 )
 
 type Client struct {
@@ -32,6 +45,13 @@ func (client *Client) ReadPump() {
 		client.connection.Close()
 	}()
 
+	client.connection.SetReadLimit(MAX_MESSAGE_SIZE)
+	client.connection.SetReadDeadline(time.Now().Add(PONG_WAIT))
+	client.connection.SetPongHandler(func(appData string) error {
+		client.connection.SetReadDeadline(time.Now().Add(PONG_WAIT))
+		return nil
+	})
+
 	for {
 		message, err := HandleMessage(client)
 
@@ -41,20 +61,89 @@ func (client *Client) ReadPump() {
 
 		// If this is a local client sending us the very first request
 		if !client.local && message.Id != "" {
+			oldId := client.id
 			client.id = message.Id
 			client.local = message.Local
+			client.hub.update <- struct {
+				id     string
+				client *Client
+			}{oldId, client}
 		}
+	}
+}
 
-		err = client.connection.WriteJSON(message)
+func (client *Client) WritePump() {
+	ticker := time.NewTicker(PING_PERIOD)
 
-		if err != nil {
-			break
+	defer func() {
+		ticker.Stop()
+		client.connection.Close()
+	}()
+
+	for {
+		select {
+		case message, ok := <-client.send:
+			err := client.connection.SetWriteDeadline(time.Now().Add(WRITE_WAIT))
+
+			if err != nil {
+				return
+			}
+
+			if !ok {
+				client.connection.WriteMessage(websocket.CloseMessage, []byte{})
+				return
+			}
+
+			writer, err := client.connection.NextWriter(websocket.TextMessage)
+
+			if err != nil {
+				return
+			}
+
+			_, err = writer.Write(message)
+
+			if err != nil {
+				return
+			}
+
+			// Handle queued messages
+
+			for i := 0; i < len(client.send); i++ {
+				_, err = writer.Write(newLine)
+
+				if err != nil {
+					return
+				}
+
+				_, err = writer.Write(<-client.send)
+
+				if err != nil {
+					return
+				}
+			}
+
+			if err := writer.Close(); err != nil {
+				return
+			}
+		case <-ticker.C:
+			log.Println("Sending Ping Message")
+			err := client.connection.SetWriteDeadline(time.Now().Add(WRITE_WAIT))
+
+			if err != nil {
+				log.Fatal("Error setting write deadline", err)
+				return
+			}
+
+			if err := client.connection.WriteMessage(websocket.PingMessage, nil); err != nil {
+				log.Fatal("Error sending Ping message", err)
+				return
+			}
 		}
 	}
 }
 
 func HandleNewLogLine(client *Client, message LogMessage) {
-	log.Println(message)
+	client.hub.broadcast <- []byte(message.Line)
 }
 
 func HandleMessage(client *Client) (Message, error) {
@@ -65,6 +154,8 @@ func HandleMessage(client *Client) (Message, error) {
 		if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 			log.Println("Unexpected server close: ", err)
 		}
+
+		return Message{}, err
 	}
 
 	switch message.Event {
