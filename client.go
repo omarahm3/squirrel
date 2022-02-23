@@ -29,6 +29,22 @@ func InitClient(input chan string) *websocket.Conn {
 	return connection
 }
 
+// Needed to receive server events
+// Right now we do nothing, but its here to avoid errors on the protocol
+func HandleIncomingMessages(connection *websocket.Conn) {
+	defer func() {
+    connection.Close()
+	}()
+
+	for {
+		_, _, err := connection.ReadMessage()
+
+		if err != nil {
+			break
+		}
+	}
+}
+
 func SendMessage(connection *websocket.Conn, message Message) {
 	err := connection.WriteJSON(message)
 

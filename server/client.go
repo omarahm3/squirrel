@@ -26,17 +26,8 @@ type Client struct {
 	connection *websocket.Conn
 	hub        *Hub
 	send       chan []byte
-}
-
-type Message struct {
-	Id      string      `json:"id"`
-	Local   bool        `json:"local"`
-	Payload interface{} `json:"payload"`
-	Event   string      `json:"event"`
-}
-
-type LogMessage struct {
-	Line string `json:"line"`
+	peerId     string
+	active     bool
 }
 
 func (client *Client) ReadPump() {
@@ -63,7 +54,7 @@ func (client *Client) ReadPump() {
 		if !client.local && message.Id != "" {
 			oldId := client.id
 			client.id = message.Id
-			client.local = message.Local
+
 			client.hub.update <- struct {
 				id     string
 				client *Client
@@ -146,6 +137,33 @@ func HandleNewLogLine(client *Client, message LogMessage) {
 	client.hub.broadcast <- []byte(message.Line)
 }
 
+func HandleIdentityMessage(client *Client, message Message, payload IdentityMessage) {
+  var updateId string
+
+	// In case this is a local peer
+	if payload.Local {
+		updateId = client.id
+		client.id = message.Id
+		client.local = payload.Local
+    client.peerId = ""
+	} else {
+    if payload.PeerId == "" {
+      log.Fatal("PeerId must not be empty")
+      return
+    }
+
+    updateId = client.id
+    client.peerId = payload.PeerId
+  }
+
+  client.active = true
+
+	client.hub.update <- struct {
+		id     string
+		client *Client
+	}{updateId, client}
+}
+
 func HandleMessage(client *Client) (Message, error) {
 	var message Message
 	err := client.connection.ReadJSON(&message)
@@ -159,19 +177,37 @@ func HandleMessage(client *Client) (Message, error) {
 	}
 
 	switch message.Event {
+	case "identity":
+		identityMessage := IdentityMessage{}
+		data, err := json.Marshal(message.Payload)
+
+		if err != nil {
+			log.Fatalln("HandleMessage.Identity::: Unexpected error (marshal):", err)
+			return Message{}, err
+		}
+
+		err = json.Unmarshal([]byte(data), &identityMessage)
+
+		if err != nil {
+			log.Fatalln("HandleMessage.Identity::: Unexpected error (unmarshal):", err)
+			return Message{}, err
+		}
+
+		HandleIdentityMessage(client, message, identityMessage)
+
 	case "log_line":
 		logMessage := LogMessage{}
 		data, err := json.Marshal(message.Payload)
 
 		if err != nil {
-			log.Fatalln("#1# Unexpected error occurred:", err)
+			log.Fatalln("HandleMessage.LogLine::: Unexpected error (marshal):", err)
 			return Message{}, err
 		}
 
 		err = json.Unmarshal([]byte(data), &logMessage)
 
 		if err != nil {
-			log.Fatalln("#2# Unexpected error occurred:", err)
+			log.Fatalln("HandleMessage.LogLine::: Unexpected error (unmarshal):", err)
 			return Message{}, err
 		}
 

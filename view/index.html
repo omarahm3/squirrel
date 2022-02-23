@@ -1,35 +1,37 @@
 <html>
-  <head>
-   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-  </head>
 
-  <body>
-    <h3>Websocket Test</h3>
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+</head>
 
-    <h2>Client: {{ .clientId }}</h2>
+<body>
+  <h3>Websocket Test</h3>
 
-    <pre id="output"></pre>
+  <h2>Client: {{ .clientId }} logs</h2>
 
-    <script>
+  <pre id="output"></pre>
+
+  <script>
     const URL = 'ws://localhost:3000/ws'
-      const socket = new WebSocket(URL)
+    const socket = new WebSocket(URL)
 
-      const send = function (data) {
-        $('#output').append((new Date()) + " ==> " + data + "\n")
-        socket.send(data)
-      }
+    const send = function (data) {
+      socket.send(data)
+    }
 
-      socket.onmessage = function (message) {
-        $('#output').append((new Date()) + " <== " + message.data + "\n")
-      }
+    socket.onmessage = function (message) {
+      console.log('Incoming Message', message)
+      $('#output').append(message.data + "\n")
+    }
 
-      socket.onopen = () => {
-        console.log('Socket is open')
-        setInterval(function () {
-          console.log('Sending Ping')
-          send("Ping")
-        }, 1000)
-      }
-    </script>
-  </body>
+    socket.onopen = () => {
+      console.log('Socket is open')
+      setInterval(function () {
+        console.log('Sending Ping')
+        send("Ping")
+      }, 60 * 60 * 1000)
+    }
+  </script>
+</body>
+
 </html>
