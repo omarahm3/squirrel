@@ -31,7 +31,7 @@ func main() {
 		select {
 		case line := <-input:
 			// log.Printf("[%s] %s\n", clientId, line)
-			SendMessage(connection, Message{
+      err := connection.WriteJSON(Message{
 				Id:    clientId,
 				Local: true,
 				Event: "log_line",
@@ -39,6 +39,11 @@ func main() {
 					Line: line,
 				},
 			})
+
+      if err != nil {
+        log.Println("Error during sending message to websocket:", err)
+        return
+      }
 		case <-interrupt:
 			log.Println("Received SIGINT interrupt signal. Closing all pending connections")
 			HandleWebsocketClose(connection)

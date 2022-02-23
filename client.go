@@ -45,15 +45,6 @@ func HandleIncomingMessages(connection *websocket.Conn) {
 	}
 }
 
-func SendMessage(connection *websocket.Conn, message Message) {
-	err := connection.WriteJSON(message)
-
-	if err != nil {
-		log.Println("Error during sending message to websocket:", err)
-		return
-	}
-}
-
 func HandleWebsocketClose(connection *websocket.Conn) {
 	err := connection.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 
