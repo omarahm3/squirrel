@@ -1,9 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
+	"os"
 
 	"github.com/gorilla/websocket"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 const WEBSOCKET_URL string = "ws://localhost:3000/ws"
@@ -23,12 +27,32 @@ type Message struct {
 	Event   string      `json:"event"`
 }
 
+func (message Message) MarshalLogObject(encoder zapcore.ObjectEncoder) error {
+  encoder.AddString("id", message.Id)
+  encoder.AddString("Event", message.Event)
+
+  data, err := json.Marshal(message.Payload)
+
+  if err != nil {
+    zap.S().Error("Unexpected error while marshaling payload: ", err, message.Payload)
+    return err
+  }
+
+  encoder.AddString("payload", string(data))
+  return nil
+}
+
 func InitClient(input chan string) *websocket.Conn {
+  zap.S().Debug("Initiating websocket client")
+
 	connection, _, err := websocket.DefaultDialer.Dial(WEBSOCKET_URL, nil)
 
 	if err != nil {
-		log.Fatal("Error connecting to websocket server:", err)
+		zap.S().Error("Error connecting to websocket server: ", err)
+    os.Exit(1)
 	}
+
+  zap.S().Debug("Websocket connection was successful")
 
 	return connection
 }
@@ -38,22 +62,28 @@ func InitClient(input chan string) *websocket.Conn {
 func HandleIncomingMessages(connection *websocket.Conn) {
 	defer func() {
     connection.Close()
+    zap.S().Info("Client connection closed")
 	}()
 
 	for {
-		_, _, err := connection.ReadMessage()
+		_, message, err := connection.ReadMessage()
+
+    zap.S().Debug("Incoming message: ", string(message))
 
 		if err != nil {
+      zap.L().Error("Error while reading incoming message", zap.Error(err))
 			break
 		}
 	}
 }
 
 func HandleWebsocketClose(connection *websocket.Conn) {
+  zap.L().Info("Closing websocket connection")
+
 	err := connection.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 
 	if err != nil {
-		log.Fatal("Error during closing websocket:", err)
+		zap.L().Error("Error during closing websocket:", zap.Error(err))
 		return
 	}
 }
