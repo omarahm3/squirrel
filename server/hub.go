@@ -4,8 +4,11 @@ import "log"
 
 // Maintain the set of active clients
 type Hub struct {
-	clients    map[string]*Client
-	broadcast  chan []byte
+	clients   map[string]*Client
+	broadcast chan struct {
+		message  []byte
+		clientId string
+	}
 	register   chan *Client
 	unregister chan *Client
 	update     chan struct {
@@ -17,9 +20,12 @@ type Hub struct {
 func NewHub() *Hub {
 	return &Hub{
 		clients:    make(map[string]*Client),
-		broadcast:  make(chan []byte),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
+		broadcast: make(chan struct {
+			message  []byte
+			clientId string
+		}),
 		update: make(chan struct {
 			id     string
 			client *Client
@@ -53,8 +59,13 @@ func (h *Hub) Run() {
 			removeClient(client.hub, client.id, true)
 		case message := <-h.broadcast:
 			for _, client := range h.clients {
+				// Ignore any client and only accept client that has the link
+				if client.local || !client.active || client.peerId != message.clientId {
+					continue
+				}
+
 				select {
-				case client.send <- message:
+				case client.send <- message.message:
 				default:
 					delete(h.clients, client.id)
 					close(client.send)

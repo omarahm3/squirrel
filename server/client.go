@@ -33,7 +33,7 @@ type Client struct {
 
 func (client *Client) ReadPump() {
 	defer func() {
-    log.Println("ReadPump::: Removing client, and closing connection")
+		log.Println("ReadPump::: Removing client, and closing connection")
 		client.hub.unregister <- client
 		client.connection.Close()
 	}()
@@ -136,41 +136,47 @@ func (client *Client) WritePump() {
 }
 
 func HandleNewLogLine(client *Client, message LogMessage) {
-	client.hub.broadcast <- []byte(message.Line)
+	client.hub.broadcast <- struct {
+		message  []byte
+		clientId string
+	}{
+		message:  []byte(message.Line),
+		clientId: client.id,
+	}
 }
 
 func HandleIdentityMessage(client *Client, message Message, payload IdentityMessage) {
-  var updateId string
+	var updateId string
 
 	// In case this is a local peer
 	if payload.Local {
 		updateId = client.id
 		client.id = message.Id
 		client.local = payload.Local
-    client.peerId = ""
+		client.peerId = ""
 	} else {
-    if payload.PeerId == "" {
-      log.Println("PeerId must not be empty, discarding")
-      return
-    }
+		if payload.PeerId == "" {
+			log.Println("PeerId must not be empty, discarding")
+			return
+		}
 
-    updateId = client.id
-    client.peerId = payload.PeerId
-  }
+		updateId = client.id
+		client.peerId = payload.PeerId
+	}
 
-  client.active = true
+	client.active = true
 
 	client.hub.update <- struct {
 		id     string
 		client *Client
 	}{updateId, client}
 
-  log.Println("--------------------------")
-  log.Printf("ID: %s", client.id)
-  log.Printf("Peer ID: %s", client.peerId)
-  log.Printf("Active: %t", client.active)
-  log.Printf("Local: %t", client.local)
-  log.Println("--------------------------")
+	log.Println("--------------------------")
+	log.Printf("ID: %s", client.id)
+	log.Printf("Peer ID: %s", client.peerId)
+	log.Printf("Active: %t", client.active)
+	log.Printf("Local: %t", client.local)
+	log.Println("--------------------------")
 }
 
 func HandleMessage(client *Client) (Message, error) {
@@ -205,10 +211,10 @@ func HandleMessage(client *Client) (Message, error) {
 		HandleIdentityMessage(client, message, identityMessage)
 
 	case "log_line":
-    if !client.active {
+		if !client.active {
 			log.Println("HandleMessage.LogLine::: Unknown client, ignoring messages")
-      return Message{}, errors.New("Client is unknown, ignoring messages")
-    }
+			return Message{}, errors.New("Client is unknown, ignoring messages")
+		}
 
 		logMessage := LogMessage{}
 		data, err := json.Marshal(message.Payload)
