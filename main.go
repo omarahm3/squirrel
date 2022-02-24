@@ -14,11 +14,17 @@ import (
 var interrupt chan os.Signal
 
 func main() {
-	interrupt = make(chan os.Signal) // Channel to listen for interrupt signal to gracefully terminate
+  interrupt = make(chan os.Signal) // Channel to listen for interrupt signal to gracefully terminate
 	input := make(chan string)
 
 	utils.HandleLogLevel()
-	defer zap.S().Sync()
+
+  defer func() {
+    if err := zap.S().Sync(); err != nil {
+      fmt.Println("Error syncing zap:", err)
+      os.Exit(1)
+    }
+  }()
 
 	clientId := utils.GenerateUUID()
 
