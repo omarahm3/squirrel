@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"log"
 	"os"
 
 	"github.com/gorilla/websocket"
@@ -28,31 +27,31 @@ type Message struct {
 }
 
 func (message Message) MarshalLogObject(encoder zapcore.ObjectEncoder) error {
-  encoder.AddString("id", message.Id)
-  encoder.AddString("Event", message.Event)
+	encoder.AddString("id", message.Id)
+	encoder.AddString("Event", message.Event)
 
-  data, err := json.Marshal(message.Payload)
+	data, err := json.Marshal(message.Payload)
 
-  if err != nil {
-    zap.S().Error("Unexpected error while marshaling payload: ", err, message.Payload)
-    return err
-  }
+	if err != nil {
+		zap.S().Error("Unexpected error while marshaling payload: ", err, message.Payload)
+		return err
+	}
 
-  encoder.AddString("payload", string(data))
-  return nil
+	encoder.AddString("payload", string(data))
+	return nil
 }
 
 func InitClient(input chan string) *websocket.Conn {
-  zap.S().Debug("Initiating websocket client")
+	zap.S().Debug("Initiating websocket client")
 
 	connection, _, err := websocket.DefaultDialer.Dial(WEBSOCKET_URL, nil)
 
 	if err != nil {
 		zap.S().Error("Error connecting to websocket server: ", err)
-    os.Exit(1)
+		os.Exit(1)
 	}
 
-  zap.S().Debug("Websocket connection was successful")
+	zap.S().Debug("Websocket connection was successful")
 
 	return connection
 }
@@ -61,24 +60,24 @@ func InitClient(input chan string) *websocket.Conn {
 // Right now we do nothing, but its here to avoid errors on the protocol
 func HandleIncomingMessages(connection *websocket.Conn) {
 	defer func() {
-    connection.Close()
-    zap.S().Info("Client connection closed")
+		connection.Close()
+		zap.S().Info("Client connection closed")
 	}()
 
 	for {
 		_, message, err := connection.ReadMessage()
 
-    zap.S().Debug("Incoming message: ", string(message))
+		zap.S().Debug("Incoming message: ", string(message))
 
 		if err != nil {
-      zap.L().Error("Error while reading incoming message", zap.Error(err))
+			zap.L().Error("Error while reading incoming message", zap.Error(err))
 			break
 		}
 	}
 }
 
 func HandleWebsocketClose(connection *websocket.Conn) {
-  zap.L().Info("Closing websocket connection")
+	zap.L().Info("Closing websocket connection")
 
 	err := connection.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 
