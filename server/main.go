@@ -56,10 +56,16 @@ func main() {
     _ = zap.S().Sync()
   }()
 
-  port, err := strconv.Atoi(utils.GetEnvVariable("PORT"))
+  envPort := utils.GetEnvVariable("PORT")
+
+  if envPort == "" {
+    envPort = "3000"
+  }
+
+  port, err := strconv.Atoi(envPort)
 
   if err != nil {
-    utils.FatalError("Can not convert port from string to int", err)
+    utils.FatalError("Couldn't convert port to int", err)
   }
 
 	server := gin.Default()
