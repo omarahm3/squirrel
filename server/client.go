@@ -281,7 +281,7 @@ func HandleMessage(client *Client) (Message, error) {
 
     zap.S().Debugf(
       "Payload was marshaled",
-      "payload", data,
+      "payload", string(data),
     )
 
 		err = json.Unmarshal([]byte(data), &identityMessage)
@@ -311,7 +311,7 @@ func HandleMessage(client *Client) (Message, error) {
 
     zap.S().Debugf(
       "Payload was marshaled",
-      "payload", data,
+      "payload", string(data),
     )
 
 		err = json.Unmarshal([]byte(data), &logMessage)
