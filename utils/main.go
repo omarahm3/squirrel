@@ -30,15 +30,17 @@ func InitLogging() {
 
   if GetEnv() == "dev" {
     config = zap.NewDevelopmentConfig()
+    config.Level.SetLevel(zap.DebugLevel)
   } else {
     config = zap.NewProductionConfig()
+    config.Level.SetLevel(zap.ErrorLevel)
   }
 
 	config.OutputPaths = []string{
-		"./log.txt",
+		fmt.Sprintf("%s/.squirrely.log", GetEnvVariable("HOME")),
 		"stdout",
 	}
-	config.Level.SetLevel(zap.DebugLevel)
+
   config.EncoderConfig.EncodeTime = zapcore.TimeEncoder(func(t time.Time, pae zapcore.PrimitiveArrayEncoder) {
     pae.AppendString(t.UTC().Format("2006-01-02T15:04:05Z0700"))
   })
