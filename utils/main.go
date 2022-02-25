@@ -12,39 +12,39 @@ import (
 )
 
 func GetEnv() string {
-  env := os.Getenv("APP_ENV")
+	env := os.Getenv("APP_ENV")
 
-  if env == "" {
-    return "dev"
-  }
+	if env == "" {
+		return "dev"
+	}
 
-  return "prod"
+	return "prod"
 }
 
 func GetEnvVariable(variable string) string {
-  return os.Getenv(variable)
+	return os.Getenv(variable)
 }
 
 func InitLogging() {
-  var config zap.Config
+	var config zap.Config
 
-  if GetEnv() == "dev" {
-    config = zap.NewDevelopmentConfig()
-    config.Level.SetLevel(zap.DebugLevel)
-  } else {
-    config = zap.NewProductionConfig()
-    config.Level.SetLevel(zap.ErrorLevel)
-  }
+	if GetEnv() == "dev" {
+		config = zap.NewDevelopmentConfig()
+		config.Level.SetLevel(zap.DebugLevel)
+	} else {
+		config = zap.NewProductionConfig()
+		config.Level.SetLevel(zap.ErrorLevel)
+	}
 
 	config.OutputPaths = []string{
 		fmt.Sprintf("%s/.squirrely.log", GetEnvVariable("HOME")),
 		"stdout",
 	}
 
-  config.EncoderConfig.EncodeTime = zapcore.TimeEncoder(func(t time.Time, pae zapcore.PrimitiveArrayEncoder) {
-    pae.AppendString(t.UTC().Format("2006-01-02T15:04:05Z0700"))
-  })
-  config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	config.EncoderConfig.EncodeTime = zapcore.TimeEncoder(func(t time.Time, pae zapcore.PrimitiveArrayEncoder) {
+		pae.AppendString(t.UTC().Format("2006-01-02T15:04:05Z0700"))
+	})
+	config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 	config.EncoderConfig.FunctionKey = "Function"
 	logger, err := config.Build()
 
