@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 
 	"github.com/gorilla/websocket"
@@ -44,7 +45,7 @@ func (message Message) MarshalLogObject(encoder zapcore.ObjectEncoder) error {
 func InitClient(input chan string) *websocket.Conn {
 	zap.S().Debug("Initiating websocket client")
 
-	connection, _, err := websocket.DefaultDialer.Dial(WEBSOCKET_URL, nil)
+	connection, _, err := websocket.DefaultDialer.Dial(fmt.Sprintf("ws://%s:3000/ws", DOMAIN), nil)
 
 	if err != nil {
 		zap.S().Error("Error connecting to websocket server: ", err)
