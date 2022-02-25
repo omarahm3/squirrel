@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/gorilla/websocket v1.5.0
-	github.com/omarahm3/squirrel/utils v0.0.0-20220225214518-99e36d59ce6c
+	github.com/omarahm3/squirrel/utils v0.0.0-20220225221234-2435370e5916
 	go.uber.org/zap v1.21.0
 )
 
