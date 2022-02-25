@@ -65,7 +65,7 @@ func main() {
 
   zap.S().Debug("Loading server HTML files")
 
-	server.LoadHTMLFiles("./view")
+	server.LoadHTMLFiles("./view/index.html")
 
   initRoutes(server, hub)
 
