@@ -12,10 +12,16 @@ import (
 )
 
 var interrupt chan os.Signal
+var DOMAIN string
 
 func main() {
   interrupt = make(chan os.Signal) // Channel to listen for interrupt signal to gracefully terminate
 	input := make(chan string)
+  DOMAIN = utils.GetEnvVariable("DOMAIN")
+
+  if DOMAIN == "" {
+    DOMAIN = "localhost:3000"
+  }
 
 	utils.InitLogging()
 
@@ -28,7 +34,7 @@ func main() {
 
 	zap.S().Debug("Client ID was generated: ", clientId)
 
-	fmt.Printf("Link: [ http://localhost:3000/client/%s ]\n", clientId)
+	fmt.Printf("Link: [ http://%s/client/%s ]\n", DOMAIN, clientId)
 
 	signal.Notify(interrupt, os.Interrupt)
 
