@@ -17,7 +17,7 @@ func main() {
   interrupt = make(chan os.Signal) // Channel to listen for interrupt signal to gracefully terminate
 	input := make(chan string)
 
-	utils.HandleLogLevel()
+	utils.InitLogging()
 
   defer func() {
     if err := zap.S().Sync(); err != nil {

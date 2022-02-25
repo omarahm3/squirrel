@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func HandleLogLevel() {
+func InitLogging() {
   config := zap.NewProductionConfig()
   config.OutputPaths = []string{
     "./log.txt",
