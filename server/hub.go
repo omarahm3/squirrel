@@ -85,7 +85,7 @@ func (h *Hub) Run() {
 			for _, client := range h.clients {
 				// Ignore any client and only accept client that has the link
 				if client.local || !client.active || client.peerId != message.clientId {
-					zap.S().Debugw("Ignoring client",
+					zap.S().Debugw("Ignoring broadcasting message to this client",
 						"clientId", client.id,
 						"local", client.local,
 						"active", client.active)
