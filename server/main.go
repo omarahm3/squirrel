@@ -18,12 +18,16 @@ var wsUpgrader = websocket.Upgrader{
 }
 
 func wsHandler(hub *Hub, r *http.Request, w http.ResponseWriter) {
+  zap.S().Info("Handling websocket upgrade request")
+
 	connection, err := wsUpgrader.Upgrade(w, r, nil)
 
 	if err != nil {
-		fmt.Printf("Failed to set websocket upgrade: %+v", err)
+    zap.L().Error("Error upgrading websocket request, ignoring", zap.Error(err))
 		return
 	}
+
+  zap.S().Info("Websocket connection was successful")
 
 	client := &Client{
 		id:         utils.GenerateUUID(),
@@ -33,6 +37,8 @@ func wsHandler(hub *Hub, r *http.Request, w http.ResponseWriter) {
 		send:       make(chan []byte, 256),
 	}
 
+  zap.S().Infow("Initialized new client", "clientId", client.id)
+
 	client.hub.register <- client
 
 	go client.ReadPump()
@@ -41,6 +47,11 @@ func wsHandler(hub *Hub, r *http.Request, w http.ResponseWriter) {
 
 func main() {
   utils.InitLogging()
+
+  defer func() {
+    _ = zap.L().Sync()
+    _ = zap.S().Sync()
+  }()
 
 	server := gin.Default()
 
