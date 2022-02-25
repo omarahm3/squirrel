@@ -15,10 +15,10 @@ func GetEnv() string {
 	env := os.Getenv("APP_ENV")
 
 	if env == "" {
-		return "dev"
+		return "prod"
 	}
 
-	return "prod"
+	return "dev"
 }
 
 func GetEnvVariable(variable string) string {

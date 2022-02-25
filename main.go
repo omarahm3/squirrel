@@ -13,6 +13,7 @@ import (
 
 var interrupt chan os.Signal
 var DOMAIN string
+const DEFAULT_DOMAIN = "squirrel-jwls9.ondigitalocean.app"
 
 func main() {
   interrupt = make(chan os.Signal) // Channel to listen for interrupt signal to gracefully terminate
@@ -20,7 +21,7 @@ func main() {
   DOMAIN = utils.GetEnvVariable("DOMAIN")
 
   if DOMAIN == "" {
-    DOMAIN = "localhost:3000"
+    DOMAIN = DEFAULT_DOMAIN
   }
 
 	utils.InitLogging()
