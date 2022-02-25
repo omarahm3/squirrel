@@ -1,6 +1,8 @@
 package main
 
-import "log"
+import (
+	"go.uber.org/zap"
+)
 
 // Maintain the set of active clients
 type Hub struct {
@@ -37,6 +39,10 @@ func NewHub() *Hub {
 // This flag is added to avoid removing client channel when updating the client
 func removeClient(hub *Hub, clientId string, removeChannel bool) {
 	if client, ok := hub.clients[clientId]; ok {
+		zap.S().Infow("Removing client",
+			"clientId", clientId,
+			"removeChannel", removeChannel)
+
 		delete(hub.clients, clientId)
 		if removeChannel {
 			close(client.send)
@@ -45,24 +51,52 @@ func removeClient(hub *Hub, clientId string, removeChannel bool) {
 }
 
 func (h *Hub) Run() {
+	zap.S().Debug("Created clients hub")
+
 	for {
 		select {
 		case client := <-h.register:
-			log.Println("Registering client:", client.id)
+			zap.S().Infow("Adding client to hub",
+				"id", client.id,
+				"active", client.active,
+				"local", client.local,
+				"peerId", client.peerId)
+
 			h.clients[client.id] = client
+
 		case info := <-h.update:
-			log.Printf("Updating client ID: [%s] to [%s]", info.id, info.client.id)
+			zap.S().Infow("Updating client",
+				"id", info.id,
+				"newId", info.client.id)
+
 			removeClient(h, info.id, false)
 			h.clients[info.client.id] = info.client
 
 		case client := <-h.unregister:
+			zap.S().Infow("Unregistering client",
+				"id", client.id)
+
 			removeClient(client.hub, client.id, true)
+
 		case message := <-h.broadcast:
+			zap.S().Infow("Broadcasting message to peer",
+				"clientId", message.clientId)
+
 			for _, client := range h.clients {
 				// Ignore any client and only accept client that has the link
 				if client.local || !client.active || client.peerId != message.clientId {
+					zap.S().Debugw("Ignoring client",
+						"clientId", client.id,
+						"local", client.local,
+						"active", client.active)
+
 					continue
 				}
+      
+        zap.S().Debugw("Sending message to client",
+          "clientId", client.id,
+          "local", client.local,
+          "active", client.active)
 
 				select {
 				case client.send <- message.message:
