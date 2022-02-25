@@ -20,10 +20,8 @@ func main() {
 	utils.InitLogging()
 
   defer func() {
-    if err := zap.S().Sync(); err != nil {
-      fmt.Println("Error syncing zap:", err)
-      os.Exit(1)
-    }
+    _ = zap.L().Sync()
+    _ = zap.S().Sync()
   }()
 
 	clientId := utils.GenerateUUID()
