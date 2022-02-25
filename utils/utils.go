@@ -4,18 +4,41 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
+func GetEnv() string {
+  env := os.Getenv("APP_ENV")
+
+  if env == "" {
+    return "dev"
+  }
+
+  return "prod"
+}
+
 func InitLogging() {
-	config := zap.NewProductionConfig()
+  var config zap.Config
+
+  if GetEnv() == "dev" {
+    config = zap.NewDevelopmentConfig()
+  } else {
+    config = zap.NewProductionConfig()
+  }
+
 	config.OutputPaths = []string{
 		"./log.txt",
 		"stdout",
 	}
 	config.Level.SetLevel(zap.DebugLevel)
+  config.EncoderConfig.EncodeTime = zapcore.TimeEncoder(func(t time.Time, pae zapcore.PrimitiveArrayEncoder) {
+    pae.AppendString(t.UTC().Format("2006-01-02T15:04:05Z0700"))
+  })
+  config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 	config.EncoderConfig.FunctionKey = "Function"
 	logger, err := config.Build()
 
