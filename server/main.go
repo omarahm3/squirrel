@@ -2,13 +2,15 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/omarahm3/live-logs/utils"
+	"go.uber.org/zap"
 )
+
+const SERVER_PORT = 3000
 
 var wsUpgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
@@ -38,12 +40,37 @@ func wsHandler(hub *Hub, r *http.Request, w http.ResponseWriter) {
 }
 
 func main() {
+  utils.InitLogging()
+
 	server := gin.Default()
+
+  zap.S().Debug("Prepared server default")
+
 	hub := NewHub()
+
+  zap.S().Debug("Created clients hub")
 
 	go hub.Run()
 
-	server.LoadHTMLFiles("./view/index.html")
+  zap.S().Debug("Loading server HTML files")
+
+	server.LoadHTMLFiles("./view")
+
+  initRoutes(server, hub)
+
+  zap.S().Debugf("Running server on port [%d]\n", SERVER_PORT)
+
+  err := server.Run(fmt.Sprintf(":%d", SERVER_PORT))
+
+	if err != nil {
+    utils.FatalError("Error while running server", err)
+	}
+
+	fmt.Printf("Server is running on http://localhost:%d", SERVER_PORT)
+}
+
+func initRoutes(server *gin.Engine, hub *Hub) {
+  zap.S().Debug("Initializing server routes")
 
 	server.GET("/", func(context *gin.Context) {
 		context.HTML(200, "index.html", nil)
@@ -56,34 +83,24 @@ func main() {
 	server.GET("/client/:clientId", func(context *gin.Context) {
 		clientId := context.Param("clientId")
 
+    zap.S().Debugf("Incoming request to subscribe to client ID: [%s]\n", clientId)
+
 		if clientId == "" {
+      zap.S().Debug("Client ID is empty ignoring")
 			context.String(400, "Cannot be empty")
 			return
 		}
 
-
-    log.Println("------------------------------------------")
-    log.Println("Getting all clients")
-    for id, client := range hub.clients {
-      log.Printf("Key: [%s], Client: [%v]\n", id, client)
-    }
-    log.Println("------------------------------------------")
-
 		if _, ok := hub.clients[clientId]; !ok {
+      zap.S().Debugf("Client ID: [%s] doesn't exist on the hub\n", clientId)
 			context.String(404, "Client not found")
 			return
 		}
+
+    zap.S().Debugf("Client ID: [%s] was found on hub\n", clientId)
 
 		context.HTML(200, "index.html", gin.H{
 			"clientId": clientId,
 		})
 	})
-
-	err := server.Run(":3000")
-
-	if err != nil {
-		panic(fmt.Sprintf("Failed to start server - Error %v", err))
-	}
-
-	fmt.Println("Server is running on http://localhost:3000")
 }
