@@ -21,6 +21,10 @@ func GetEnv() string {
   return "prod"
 }
 
+func GetEnvVariable(variable string) string {
+  return os.Getenv(variable)
+}
+
 func InitLogging() {
   var config zap.Config
 

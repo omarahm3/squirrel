@@ -3,14 +3,13 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/omarahm3/live-logs/utils"
 	"go.uber.org/zap"
 )
-
-const SERVER_PORT = 3000
 
 var wsUpgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
@@ -46,12 +45,22 @@ func wsHandler(hub *Hub, r *http.Request, w http.ResponseWriter) {
 }
 
 func main() {
+  if utils.GetEnv() != "dev" {
+    gin.SetMode(gin.ReleaseMode)
+  }
+
   utils.InitLogging()
 
   defer func() {
     _ = zap.L().Sync()
     _ = zap.S().Sync()
   }()
+
+  port, err := strconv.Atoi(utils.GetEnvVariable("PORT"))
+
+  if err != nil {
+    utils.FatalError("Can not convert port from string to int", err)
+  }
 
 	server := gin.Default()
 
@@ -69,15 +78,15 @@ func main() {
 
   initRoutes(server, hub)
 
-  zap.S().Debugf("Running server on port [%d]\n", SERVER_PORT)
+  zap.S().Debugf("Running server on port [%d]\n", port)
 
-  err := server.Run(fmt.Sprintf(":%d", SERVER_PORT))
+  err = server.Run(fmt.Sprintf(":%d", port))
 
 	if err != nil {
     utils.FatalError("Error while running server", err)
 	}
 
-	fmt.Printf("Server is running on http://localhost:%d", SERVER_PORT)
+	fmt.Printf("Server is running on http://localhost:%d", port)
 }
 
 func initRoutes(server *gin.Engine, hub *Hub) {
