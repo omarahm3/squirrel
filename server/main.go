@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"github.com/omarahm3/squirrel/utils"
+  "github.com/omarahm3/squirrel/utils"
 	"go.uber.org/zap"
 )
 
