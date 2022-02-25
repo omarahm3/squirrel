@@ -7,7 +7,7 @@ import (
 	"os/signal"
 
 	"github.com/gorilla/websocket"
-	"github.com/omarahm3/live-logs/utils"
+	"github.com/omarahm3/squirrel/utils"
 	"go.uber.org/zap"
 )
 
