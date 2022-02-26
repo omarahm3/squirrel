@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -12,13 +11,15 @@ import (
 	"go.uber.org/zap"
 )
 
-var wsUpgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-}
+var options *ServerOptions
 
 func wsHandler(hub *Hub, r *http.Request, w http.ResponseWriter) {
 	zap.S().Info("Handling websocket upgrade request")
+
+  var wsUpgrader = websocket.Upgrader{
+    ReadBufferSize:  options.ReadBufferSize,
+    WriteBufferSize: options.WriteBufferSize,
+  }
 
 	connection, err := wsUpgrader.Upgrade(w, r, nil)
 
@@ -46,30 +47,22 @@ func wsHandler(hub *Hub, r *http.Request, w http.ResponseWriter) {
 }
 
 func main() {
-	if utils.GetEnv() != "dev" {
+  options = InitOptions()
+
+	if options.Env != "dev" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
+  // Setting env to dev for logging, we use env here instead of server options since utils is a differnet package
 	os.Setenv("APP_ENV", "dev")
 
 	utils.InitLogging()
 
+  // Sync both loggers since they're all used
 	defer func() {
 		_ = zap.L().Sync()
 		_ = zap.S().Sync()
 	}()
-
-	envPort := utils.GetEnvVariable("PORT")
-
-	if envPort == "" {
-		envPort = "3000"
-	}
-
-	port, err := strconv.Atoi(envPort)
-
-	if err != nil {
-		utils.FatalError("Couldn't convert port to int", err)
-	}
 
 	server := gin.Default()
 
@@ -87,15 +80,15 @@ func main() {
 
 	initRoutes(server, hub)
 
-	zap.S().Debugf("Running server on port [%d]\n", port)
+	zap.S().Debugf("Running server on port [%d]\n", options.Port)
 
-	err = server.Run(fmt.Sprintf(":%d", port))
+  err := server.Run(fmt.Sprintf(":%d", options.Port))
 
 	if err != nil {
 		utils.FatalError("Error while running server", err)
 	}
 
-	fmt.Printf("Server is running on http://localhost:%d", port)
+	fmt.Printf("Server is running on http://localhost:%d", options.Port)
 }
 
 func initRoutes(server *gin.Engine, hub *Hub) {
@@ -130,7 +123,7 @@ func initRoutes(server *gin.Engine, hub *Hub) {
 
 		context.HTML(200, "index.html", gin.H{
 			"clientId": clientId,
-			"domain":   utils.GetEnvVariable("DOMAIN"),
+			"domain":   options.Domain,
 		})
 	})
 }
