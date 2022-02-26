@@ -26,10 +26,10 @@ func Main() {
 	}
 
 	utils.InitLogging(utils.LoggerOptions{
-    Env: utils.GetEnv(),
-    LogLevel: zap.ErrorLevel,
-    LogFileName: ".squirrel.log",
-  })
+		Env:         utils.GetEnv(),
+		LogLevel:    zap.ErrorLevel,
+		LogFileName: ".squirrel.log",
+	})
 
 	defer func() {
 		_ = zap.L().Sync()
