@@ -14,3 +14,5 @@
 # Go workspace file
 go.work
 *.txt
+
+dist/
