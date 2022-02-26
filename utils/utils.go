@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -75,4 +76,33 @@ func GenerateUUID() string {
 func FatalError(message string, err error) {
 	zap.L().Error(message, zap.Error(err))
 	os.Exit(1)
+}
+
+func StrToInt(value string) int {
+	intVal, err := strconv.Atoi(value)
+
+	if err != nil {
+		fmt.Println("Error converting value to int", err)
+		os.Exit(1)
+	}
+
+	return intVal
+}
+
+func GetLogLevelFromString(loglevel string) zapcore.Level {
+	level, err := zapcore.ParseLevel(loglevel)
+
+	if err != nil {
+		fmt.Println("Invalid log level returned, setting default log level, Error: ", err)
+		level = zap.ErrorLevel
+	}
+
+	return level
+}
+
+func WinningDefault(value string, defaultValue string) string {
+	if value == "" {
+		return defaultValue
+	}
+	return value
 }
