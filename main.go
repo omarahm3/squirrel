@@ -25,7 +25,11 @@ func main() {
 		DOMAIN = DEFAULT_DOMAIN
 	}
 
-	utils.InitLogging()
+	utils.InitLogging(utils.LoggerOptions{
+    Env: utils.GetEnv(),
+    LogLevel: zap.ErrorLevel,
+    LogFileName: ".squirrel.log",
+  })
 
 	defer func() {
 		_ = zap.L().Sync()
