@@ -10,8 +10,6 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-const WEBSOCKET_URL string = "ws://localhost:3000/ws"
-
 type LogMessage struct {
 	Line string `json:"line"`
 }
@@ -45,7 +43,7 @@ func (message Message) MarshalLogObject(encoder zapcore.ObjectEncoder) error {
 func InitClient(input chan string) *websocket.Conn {
 	zap.S().Debug("Initiating websocket client")
 
-	connection, _, err := websocket.DefaultDialer.Dial(fmt.Sprintf("ws://%s:3000/ws", DOMAIN), nil)
+	connection, _, err := websocket.DefaultDialer.Dial(fmt.Sprintf("ws://%s/ws", DOMAIN), nil)
 
 	if err != nil {
 		zap.S().Error("Error connecting to websocket server: ", err)

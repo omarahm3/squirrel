@@ -14,6 +14,8 @@ github.com/omarahm3/squirrel/utils v0.0.0-20220225221234-2435370e5916 h1:MJmGhVh
 github.com/omarahm3/squirrel/utils v0.0.0-20220225221234-2435370e5916/go.mod h1:Ai27YY9B39lgR4Cab1N2/EAOEtfajagjhjvmuqqblDw=
 github.com/omarahm3/squirrel/utils v0.0.0-20220225223120-9de967a0b924 h1:EqNIiwJWezKwrxHn+PyI2eJQaRsVGdMjU6MyerPsswE=
 github.com/omarahm3/squirrel/utils v0.0.0-20220225223120-9de967a0b924/go.mod h1:gO/G2alffL5zla998Epch5yY0K2kdXO1HD0MLK6eixI=
+github.com/omarahm3/squirrel/utils v0.0.0-20220225230603-8036fa86f07b h1:QNpDzKjZWrgpGGCVYMPRAk+c51Kv5tJ+b2upba41+u0=
+github.com/omarahm3/squirrel/utils v0.0.0-20220225230603-8036fa86f07b/go.mod h1:gO/G2alffL5zla998Epch5yY0K2kdXO1HD0MLK6eixI=
 github.com/pkg/errors v0.8.1 h1:iURUrRGxPUNPdy5/HRSm+Yj6okJ6UtLINN0Q9M4+h3I=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=

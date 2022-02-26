@@ -13,6 +13,7 @@ import (
 
 var interrupt chan os.Signal
 var DOMAIN string
+
 const DEFAULT_DOMAIN = "squirrel-jwls9.ondigitalocean.app"
 
 func main() {
