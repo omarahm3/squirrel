@@ -1,10 +1,8 @@
-name: Go
+name: Check
 
 on:
   push:
-    branches: [ master ]
   pull_request:
-    branches: [ master ]
 
 jobs:
 
@@ -17,6 +15,14 @@ jobs:
       uses: actions/setup-go@v2
       with:
         go-version: 1.17
+
+    - name: Format
+      run: gofmt -w -s .
+
+    - uses: stefanzweifel/git-auto-commit-action@v4
+      with:
+        commit_message: "chore(format): automated format change"
+        branch: master
 
     - name: Build
       run: go build -v ./...

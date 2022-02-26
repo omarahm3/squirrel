@@ -270,24 +270,24 @@ func HandleMessage(client *Client) (Message, error) {
 
 	switch message.Event {
 	case EVENT_IDENTITY:
-    zap.S().Debug("Incoming identity event")
+		zap.S().Debug("Incoming identity event")
 		identityMessage := IdentityMessage{}
 		data, err := json.Marshal(message.Payload)
 
 		if err != nil {
-      zap.L().Error("Unexpected error while marshaling payload", zap.Error(err))
+			zap.L().Error("Unexpected error while marshaling payload", zap.Error(err))
 			return Message{}, err
 		}
 
-    zap.S().Debugf(
-      "Payload was marshaled",
-      "payload", string(data),
-    )
+		zap.S().Debugf(
+			"Payload was marshaled",
+			"payload", string(data),
+		)
 
 		err = json.Unmarshal([]byte(data), &identityMessage)
 
 		if err != nil {
-      zap.L().Error("Unexpected error while unmarshaling payload", zap.Error(err))
+			zap.L().Error("Unexpected error while unmarshaling payload", zap.Error(err))
 			return Message{}, err
 		}
 
@@ -295,29 +295,29 @@ func HandleMessage(client *Client) (Message, error) {
 
 	case EVENT_LOG_LINE:
 		if !client.active {
-      zap.L().Warn("Client is not active yet, ignoring message")
+			zap.L().Warn("Client is not active yet, ignoring message")
 			return Message{}, errors.New("Client is not active yet, ignoring messages")
 		}
 
-    zap.S().Debug("Incoming log_line event, preparing log message")
+		zap.S().Debug("Incoming log_line event, preparing log message")
 
 		logMessage := LogMessage{}
 		data, err := json.Marshal(message.Payload)
 
 		if err != nil {
-      zap.L().Error("Unexpected error while marshaling payload", zap.Error(err))
+			zap.L().Error("Unexpected error while marshaling payload", zap.Error(err))
 			return Message{}, err
 		}
 
-    zap.S().Debugf(
-      "Payload was marshaled",
-      "payload", string(data),
-    )
+		zap.S().Debugf(
+			"Payload was marshaled",
+			"payload", string(data),
+		)
 
 		err = json.Unmarshal([]byte(data), &logMessage)
 
 		if err != nil {
-      zap.L().Error("Unexpected error while unmarshaling payload", zap.Error(err))
+			zap.L().Error("Unexpected error while unmarshaling payload", zap.Error(err))
 			return Message{}, err
 		}
 
