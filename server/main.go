@@ -15,10 +15,10 @@ var options *ServerOptions
 func wsHandler(hub *Hub, r *http.Request, w http.ResponseWriter) {
 	zap.S().Info("Handling websocket upgrade request")
 
-  var wsUpgrader = websocket.Upgrader{
-    ReadBufferSize:  options.ReadBufferSize,
-    WriteBufferSize: options.WriteBufferSize,
-  }
+	var wsUpgrader = websocket.Upgrader{
+		ReadBufferSize:  options.ReadBufferSize,
+		WriteBufferSize: options.WriteBufferSize,
+	}
 
 	connection, err := wsUpgrader.Upgrade(w, r, nil)
 
@@ -46,19 +46,19 @@ func wsHandler(hub *Hub, r *http.Request, w http.ResponseWriter) {
 }
 
 func Main() {
-  options = InitOptions()
+	options = InitOptions()
 
 	if options.Env != "dev" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
 	utils.InitLogging(utils.LoggerOptions{
-    Env: options.Env,
-    LogLevel: options.LogLevel,
-    LogFileName: ".server.squirrel.log",
-  })
+		Env:         options.Env,
+		LogLevel:    options.LogLevel,
+		LogFileName: ".server.squirrel.log",
+	})
 
-  // Sync both loggers since they're all used
+	// Sync both loggers since they're all used
 	defer func() {
 		_ = zap.L().Sync()
 		_ = zap.S().Sync()
@@ -76,13 +76,13 @@ func Main() {
 
 	zap.S().Debug("Loading server HTML files")
 
-	server.LoadHTMLFiles("./view/index.html")
+	server.LoadHTMLFiles("./server/view/index.html")
 
 	initRoutes(server, hub)
 
 	zap.S().Debugf("Running server on port [%d]\n", options.Port)
 
-  err := server.Run(fmt.Sprintf(":%d", options.Port))
+	err := server.Run(fmt.Sprintf(":%d", options.Port))
 
 	if err != nil {
 		utils.FatalError("Error while running server", err)

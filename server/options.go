@@ -52,14 +52,14 @@ func toInt(value string) int {
 }
 
 func handleLogging(loglevel string) zapcore.Level {
-  level, err := zapcore.ParseLevel(loglevel)
+	level, err := zapcore.ParseLevel(loglevel)
 
-  if err != nil {
-    fmt.Println("Invalid log level returned, setting default log level, Error: ", err)
-    level = zap.ErrorLevel
-  }
+	if err != nil {
+		fmt.Println("Invalid log level returned, setting default log level, Error: ", err)
+		level = zap.ErrorLevel
+	}
 
-  return level
+	return level
 }
 
 func InitOptions() *ServerOptions {
