@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -48,6 +49,8 @@ func main() {
 	if utils.GetEnv() != "dev" {
 		gin.SetMode(gin.ReleaseMode)
 	}
+
+  os.Setenv("APP_ENV", "dev")
 
 	utils.InitLogging()
 
