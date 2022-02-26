@@ -12,7 +12,7 @@
   <pre id="output"></pre>
 
   <script>
-    const URL = 'ws://localhost:3000/ws'
+    const URL = 'ws://{{ .domain }}/ws'
     const socket = new WebSocket(URL)
 
     const send = function (data) {
@@ -34,7 +34,7 @@
         event: 'identity',
         payload: {
           local: false,
-          peerId: {{ .clientId }}
+          peerId: {{ .clientId}}
         }
       }))
     }
