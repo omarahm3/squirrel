@@ -17,20 +17,20 @@ var DOMAIN string
 const DEFAULT_DOMAIN = "squirrel-jwls9.ondigitalocean.app"
 
 func main() {
-  interrupt = make(chan os.Signal) // Channel to listen for interrupt signal to gracefully terminate
+	interrupt = make(chan os.Signal) // Channel to listen for interrupt signal to gracefully terminate
 	input := make(chan string)
-  DOMAIN = utils.GetEnvVariable("DOMAIN")
+	DOMAIN = utils.GetEnvVariable("DOMAIN")
 
-  if DOMAIN == "" {
-    DOMAIN = DEFAULT_DOMAIN
-  }
+	if DOMAIN == "" {
+		DOMAIN = DEFAULT_DOMAIN
+	}
 
 	utils.InitLogging()
 
-  defer func() {
-    _ = zap.L().Sync()
-    _ = zap.S().Sync()
-  }()
+	defer func() {
+		_ = zap.L().Sync()
+		_ = zap.S().Sync()
+	}()
 
 	clientId := utils.GenerateUUID()
 

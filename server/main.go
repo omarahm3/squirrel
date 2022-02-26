@@ -50,7 +50,7 @@ func main() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-  os.Setenv("APP_ENV", "dev")
+	os.Setenv("APP_ENV", "dev")
 
 	utils.InitLogging()
 

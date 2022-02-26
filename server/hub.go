@@ -92,11 +92,11 @@ func (h *Hub) Run() {
 
 					continue
 				}
-      
-        zap.S().Debugw("Sending message to client",
-          "clientId", client.id,
-          "local", client.local,
-          "active", client.active)
+
+				zap.S().Debugw("Sending message to client",
+					"clientId", client.id,
+					"local", client.local,
+					"active", client.active)
 
 				select {
 				case client.send <- message.message:
