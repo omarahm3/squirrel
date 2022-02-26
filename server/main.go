@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"fmt"
@@ -45,7 +45,7 @@ func wsHandler(hub *Hub, r *http.Request, w http.ResponseWriter) {
 	go client.WritePump()
 }
 
-func main() {
+func Main() {
   options = InitOptions()
 
 	if options.Env != "dev" {

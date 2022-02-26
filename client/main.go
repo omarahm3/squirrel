@@ -1,4 +1,4 @@
-package main
+package client
 
 import (
 	"bufio"
@@ -16,7 +16,7 @@ var DOMAIN string
 
 const DEFAULT_DOMAIN = "squirrel-jwls9.ondigitalocean.app"
 
-func main() {
+func Main() {
 	interrupt = make(chan os.Signal) // Channel to listen for interrupt signal to gracefully terminate
 	input := make(chan string)
 	DOMAIN = utils.GetEnvVariable("DOMAIN")
