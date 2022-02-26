@@ -11,6 +11,12 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+type LoggerOptions struct {
+	Env         string
+	LogLevel    zapcore.Level
+	LogFileName string
+}
+
 func GetEnv() string {
 	env := os.Getenv("APP_ENV")
 
@@ -25,19 +31,18 @@ func GetEnvVariable(variable string) string {
 	return os.Getenv(variable)
 }
 
-func InitLogging() {
+func InitLogging(options LoggerOptions) {
 	var config zap.Config
 
-	if GetEnv() == "dev" {
+	if options.Env == "dev" {
 		config = zap.NewDevelopmentConfig()
-		config.Level.SetLevel(zap.DebugLevel)
 	} else {
 		config = zap.NewProductionConfig()
-		config.Level.SetLevel(zap.ErrorLevel)
 	}
 
+	config.Level.SetLevel(options.LogLevel)
 	config.OutputPaths = []string{
-		fmt.Sprintf("%s/.squirrely.log", GetEnvVariable("HOME")),
+		fmt.Sprintf("%s/%s", GetEnvVariable("HOME"), options.LogFileName),
 		"stdout",
 	}
 
