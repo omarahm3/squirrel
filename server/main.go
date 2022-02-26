@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -53,10 +52,11 @@ func main() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-  // Setting env to dev for logging, we use env here instead of server options since utils is a differnet package
-	os.Setenv("APP_ENV", "dev")
-
-	utils.InitLogging()
+	utils.InitLogging(utils.LoggerOptions{
+    Env: options.Env,
+    LogLevel: options.LogLevel,
+    LogFileName: ".server.squirrel.log",
+  })
 
   // Sync both loggers since they're all used
 	defer func() {
