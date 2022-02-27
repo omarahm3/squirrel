@@ -7,8 +7,13 @@ before:
     # you may remove this if you don't need go generate
     - go generate ./...
 builds:
-  - env:
+  - main: ./main/squirrel
+    id: squirrel
+    binary: squirrel
+    env:
       - CGO_ENABLED=0
+      - LOG_LEVEL=error
+      - APP_ENV=prod
     goos:
       - linux
       - windows
@@ -16,8 +21,24 @@ builds:
     goarch:
       - amd64
       - arm64
+
+  - main: ./main/squirreld
+    id: squirreld
+    binary: squirreld
+    env:
+      - CGO_ENABLED=0
+      - LOG_LEVEL=debug
+      - APP_ENV=dev
+      - PORT=8080
+    goos:
+      - linux
+    goarch:
+      - amd64
 archives:
-  - replacements:
+  - id: squirrel
+    builds:
+      - squirrel
+    replacements:
       darwin: Darwin
       linux: Linux
       windows: Windows

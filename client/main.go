@@ -1,4 +1,4 @@
-package main
+package client
 
 import (
 	"bufio"
@@ -12,20 +12,18 @@ import (
 )
 
 var interrupt chan os.Signal
-var DOMAIN string
+var options *ClientOptions
 
-const DEFAULT_DOMAIN = "squirrel-jwls9.ondigitalocean.app"
-
-func main() {
+func Main() {
+	options = InitOptions()
 	interrupt = make(chan os.Signal) // Channel to listen for interrupt signal to gracefully terminate
 	input := make(chan string)
-	DOMAIN = utils.GetEnvVariable("DOMAIN")
 
-	if DOMAIN == "" {
-		DOMAIN = DEFAULT_DOMAIN
-	}
-
-	utils.InitLogging()
+	utils.InitLogging(utils.LoggerOptions{
+		Env:         options.Env,
+		LogLevel:    options.LogLevel,
+		LogFileName: ".squirrel.log",
+	})
 
 	defer func() {
 		_ = zap.L().Sync()
@@ -36,7 +34,7 @@ func main() {
 
 	zap.S().Debug("Client ID was generated: ", clientId)
 
-	fmt.Printf("Link: [ http://%s/client/%s ]\n", DOMAIN, clientId)
+	fmt.Printf("Link: [ http://%s/client/%s ]\n", options.Domain, clientId)
 
 	signal.Notify(interrupt, os.Interrupt)
 

@@ -4,12 +4,19 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
+
+type LoggerOptions struct {
+	Env         string
+	LogLevel    zapcore.Level
+	LogFileName string
+}
 
 func GetEnv() string {
 	env := os.Getenv("APP_ENV")
@@ -25,19 +32,18 @@ func GetEnvVariable(variable string) string {
 	return os.Getenv(variable)
 }
 
-func InitLogging() {
+func InitLogging(options LoggerOptions) {
 	var config zap.Config
 
-	if GetEnv() == "dev" {
+	if options.Env == "dev" {
 		config = zap.NewDevelopmentConfig()
-		config.Level.SetLevel(zap.DebugLevel)
 	} else {
 		config = zap.NewProductionConfig()
-		config.Level.SetLevel(zap.ErrorLevel)
 	}
 
+	config.Level.SetLevel(options.LogLevel)
 	config.OutputPaths = []string{
-		fmt.Sprintf("%s/.squirrely.log", GetEnvVariable("HOME")),
+		fmt.Sprintf("%s/%s", GetEnvVariable("HOME"), options.LogFileName),
 		"stdout",
 	}
 
@@ -70,4 +76,33 @@ func GenerateUUID() string {
 func FatalError(message string, err error) {
 	zap.L().Error(message, zap.Error(err))
 	os.Exit(1)
+}
+
+func StrToInt(value string) int {
+	intVal, err := strconv.Atoi(value)
+
+	if err != nil {
+		fmt.Println("Error converting value to int", err)
+		os.Exit(1)
+	}
+
+	return intVal
+}
+
+func GetLogLevelFromString(loglevel string) zapcore.Level {
+	level, err := zapcore.ParseLevel(loglevel)
+
+	if err != nil {
+		fmt.Println("Invalid log level returned, setting default log level, Error: ", err)
+		level = zap.ErrorLevel
+	}
+
+	return level
+}
+
+func WinningDefault(value string, defaultValue string) string {
+	if value == "" {
+		return defaultValue
+	}
+	return value
 }

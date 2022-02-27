@@ -1,10 +1,8 @@
-package main
+package server
 
 import (
 	"fmt"
 	"net/http"
-	"os"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -12,13 +10,15 @@ import (
 	"go.uber.org/zap"
 )
 
-var wsUpgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-}
+var options *ServerOptions
 
 func wsHandler(hub *Hub, r *http.Request, w http.ResponseWriter) {
 	zap.S().Info("Handling websocket upgrade request")
+
+	var wsUpgrader = websocket.Upgrader{
+		ReadBufferSize:  options.ReadBufferSize,
+		WriteBufferSize: options.WriteBufferSize,
+	}
 
 	connection, err := wsUpgrader.Upgrade(w, r, nil)
 
@@ -45,31 +45,24 @@ func wsHandler(hub *Hub, r *http.Request, w http.ResponseWriter) {
 	go client.WritePump()
 }
 
-func main() {
-	if utils.GetEnv() != "dev" {
+func Main() {
+	options = InitOptions()
+
+	if options.Env != "dev" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	os.Setenv("APP_ENV", "dev")
+	utils.InitLogging(utils.LoggerOptions{
+		Env:         options.Env,
+		LogLevel:    options.LogLevel,
+		LogFileName: ".server.squirrel.log",
+	})
 
-	utils.InitLogging()
-
+	// Sync both loggers since they're all used
 	defer func() {
 		_ = zap.L().Sync()
 		_ = zap.S().Sync()
 	}()
-
-	envPort := utils.GetEnvVariable("PORT")
-
-	if envPort == "" {
-		envPort = "3000"
-	}
-
-	port, err := strconv.Atoi(envPort)
-
-	if err != nil {
-		utils.FatalError("Couldn't convert port to int", err)
-	}
 
 	server := gin.Default()
 
@@ -83,19 +76,19 @@ func main() {
 
 	zap.S().Debug("Loading server HTML files")
 
-	server.LoadHTMLFiles("./view/index.html")
+	server.LoadHTMLFiles("./server/view/index.html")
 
 	initRoutes(server, hub)
 
-	zap.S().Debugf("Running server on port [%d]\n", port)
+	zap.S().Debugf("Running server on port [%d]\n", options.Port)
 
-	err = server.Run(fmt.Sprintf(":%d", port))
+	err := server.Run(fmt.Sprintf(":%d", options.Port))
 
 	if err != nil {
 		utils.FatalError("Error while running server", err)
 	}
 
-	fmt.Printf("Server is running on http://localhost:%d", port)
+	fmt.Printf("Server is running on http://localhost:%d", options.Port)
 }
 
 func initRoutes(server *gin.Engine, hub *Hub) {
@@ -130,7 +123,7 @@ func initRoutes(server *gin.Engine, hub *Hub) {
 
 		context.HTML(200, "index.html", gin.H{
 			"clientId": clientId,
-			"domain":   utils.GetEnvVariable("DOMAIN"),
+			"domain":   options.Domain,
 		})
 	})
 }
