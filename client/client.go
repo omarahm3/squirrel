@@ -40,7 +40,7 @@ func (message Message) MarshalLogObject(encoder zapcore.ObjectEncoder) error {
 	return nil
 }
 
-func InitClient(input chan string) *websocket.Conn {
+func InitClient() *websocket.Conn {
 	zap.S().Debug("Initiating websocket client")
 
 	connection, _, err := websocket.DefaultDialer.Dial(fmt.Sprintf("%s/ws", options.Domain.Websocket), nil)

@@ -38,7 +38,7 @@ func Main() {
 
 	signal.Notify(interrupt, os.Interrupt)
 
-	connection := InitClient(input)
+	connection := InitClient()
 
 	defer connection.Close()
 
