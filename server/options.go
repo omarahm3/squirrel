@@ -11,7 +11,7 @@ import (
 
 type ServerOptions struct {
 	Env             string
-	Domain          string
+	Domain          *utils.Domain
 	Port            int
 	LogLevel        zapcore.Level
 	ReadBufferSize  int
@@ -59,7 +59,7 @@ func InitOptions() *ServerOptions {
 
 	return &ServerOptions{
 		Env:             env,
-		Domain:          domain,
+		Domain:          utils.BuildDomain(domain, env),
 		Port:            utils.StrToInt(port),
 		LogLevel:        utils.GetLogLevelFromString(loglevel),
 		ReadBufferSize:  utils.StrToInt(readBufferSize),
