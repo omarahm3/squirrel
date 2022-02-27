@@ -1,7 +1,3 @@
-SHELL := /bin/bash
-
-WHAT := squirrel squirreld
-
 default: build
 
 fmt: 

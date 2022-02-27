@@ -11,7 +11,7 @@ import (
 
 type ClientOptions struct {
 	Env      string
-	Domain   string
+	Domain   *utils.Domain
 	LogLevel zapcore.Level
 }
 
@@ -46,7 +46,7 @@ func InitOptions() *ClientOptions {
 
 	return &ClientOptions{
 		Env:      env,
-		Domain:   domain,
+		Domain:   utils.BuildDomain(domain, env),
 		LogLevel: utils.GetLogLevelFromString(loglevel),
 	}
 }

@@ -49,7 +49,8 @@ func printOptions() {
 	zap.S().Warnw(
 		"Server started with these options",
 		"Env", options.Env,
-		"Domain", options.Domain,
+		"Public Domain", options.Domain.Public,
+		"Websocket Domain", options.Domain.Websocket,
 		"Port", options.Port,
 		"Log Level", options.LogLevel.String(),
 		"Read Buffer Size", options.ReadBufferSize,
@@ -137,7 +138,7 @@ func initRoutes(server *gin.Engine, hub *Hub) {
 
 		context.HTML(200, "index.html", gin.H{
 			"clientId": clientId,
-			"domain":   options.Domain,
+			"domain":   options.Domain.Websocket,
 		})
 	})
 }

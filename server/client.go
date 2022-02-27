@@ -10,12 +10,11 @@ import (
 )
 
 const (
-	WRITE_WAIT       = 10 * time.Second
-	PONG_WAIT        = 60 * time.Second
-	PING_PERIOD      = (PONG_WAIT * 9) / 10
-	MAX_MESSAGE_SIZE = 1024
-	EVENT_IDENTITY   = "identity"
-	EVENT_LOG_LINE   = "log_line"
+	WRITE_WAIT     = 10 * time.Second
+	PONG_WAIT      = 60 * time.Second
+	PING_PERIOD    = (PONG_WAIT * 9) / 10
+	EVENT_IDENTITY = "identity"
+	EVENT_LOG_LINE = "log_line"
 )
 
 var (
@@ -44,14 +43,14 @@ func (client *Client) ReadPump() {
 
 	zap.S().Infow(
 		"Configuring client websocket connection",
-		"readLimit", MAX_MESSAGE_SIZE,
+		"readLimit", options.MaxMessageSize,
 		"readDeadLine", readDeadline,
 		"pongWait", PONG_WAIT,
 	)
 
-	client.connection.SetReadLimit(MAX_MESSAGE_SIZE)
+	client.connection.SetReadLimit(options.MaxMessageSize)
 	client.connection.SetReadDeadline(readDeadline)
-	client.connection.SetPongHandler(func(appData string) error {
+	client.connection.SetPongHandler(func(_ string) error {
 		client.connection.SetReadDeadline(time.Now().Add(PONG_WAIT))
 		return nil
 	})
