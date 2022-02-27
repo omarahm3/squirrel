@@ -104,11 +104,11 @@ func GetLogLevelFromString(loglevel string) zapcore.Level {
 // And pick the first not empty one
 func WinningDefault(value string, values ...string) string {
 	if value == "" {
-    for _, alternative := range values {
-      if alternative != "" {
-        return alternative
-      }
-    }
+		for _, alternative := range values {
+			if alternative != "" {
+				return alternative
+			}
+		}
 	}
 	return value
 }

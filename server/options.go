@@ -28,12 +28,12 @@ const (
 )
 
 var (
-  env             string
-  domain          string
-  port            string
-  loglevel        string
-  readBufferSize  string
-  writeBufferSize string
+	env             string
+	domain          string
+	port            string
+	loglevel        string
+	readBufferSize  string
+	writeBufferSize string
 )
 
 func fprintf(format string, a ...interface{}) {

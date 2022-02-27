@@ -22,9 +22,9 @@ const (
 )
 
 var (
-  env      string
-  domain   string
-  loglevel string
+	env      string
+	domain   string
+	loglevel string
 )
 
 func fprintf(format string, a ...interface{}) {
