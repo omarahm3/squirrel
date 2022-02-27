@@ -10,8 +10,14 @@ fmt:
 server: fmt
 	go run ./main/squirreld
 
+build-server:
+	go build ./main/squirreld
+
 client: fmt
 	go run ./main/squirrel
+
+build-client:
+	go build ./main/squirrel
 
 clean:
 	go clean -i -r ./main

@@ -16,3 +16,4 @@ go.work
 *.txt
 
 dist/
+.app.yaml
