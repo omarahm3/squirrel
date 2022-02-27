@@ -22,7 +22,7 @@ const (
 	DEFAULT_ENVIRONMENT       = "prod"
 	DEFAULT_DOMAIN            = "localhost:3000"
 	DEFAULT_PORT              = "3000"
-	DEFAULT_LOG_LEVEL         = "error"
+	DEFAULT_LOG_LEVEL         = "warn"
 	DEFAULT_READ_BUFFER_SIZE  = "0"
 	DEFAULT_WRITE_BUFFER_SIZE = "0"
 )

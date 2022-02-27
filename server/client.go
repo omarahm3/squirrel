@@ -119,7 +119,7 @@ func (client *Client) WritePump() {
 				return
 			}
 
-			zap.S().Debugf("Writing message", "message", string(message))
+			zap.S().Debugw("Writing message", "message", string(message))
 
 			_, err = writer.Write(message)
 
@@ -147,7 +147,7 @@ func (client *Client) WritePump() {
 					return
 				}
 
-				zap.S().Debugf("Writing message", "message", string(message))
+				zap.S().Debugw("Writing message", "message", string(message))
 				_, err = writer.Write(message)
 
 				if err != nil {
@@ -179,7 +179,7 @@ func (client *Client) WritePump() {
 }
 
 func HandleNewLogLine(client *Client, message LogMessage) {
-	zap.S().Debugf(
+	zap.S().Debugw(
 		"Sending new log line message",
 		"message", string(message.Line),
 		"clientId", client.id,
@@ -195,7 +195,7 @@ func HandleNewLogLine(client *Client, message LogMessage) {
 }
 
 func HandleIdentityMessage(client *Client, message Message, payload IdentityMessage) {
-	zap.S().Debugf(
+	zap.S().Debugw(
 		"Handling identity message",
 		"message", string(message.Event),
 		"clientId", client.id,
@@ -205,7 +205,7 @@ func HandleIdentityMessage(client *Client, message Message, payload IdentityMess
 
 	// In case this is a local peer
 	if payload.Local {
-		zap.S().Debugf(
+		zap.S().Debugw(
 			"Preparing local client",
 			"updateId", client.id,
 			"local", payload.Local,
@@ -216,7 +216,7 @@ func HandleIdentityMessage(client *Client, message Message, payload IdentityMess
 		client.local = payload.Local
 		client.peerId = ""
 	} else {
-		zap.S().Debugf(
+		zap.S().Debugw(
 			"Preparing remote client",
 			"updateId", client.id,
 			"local", payload.Local,
@@ -240,7 +240,7 @@ func HandleIdentityMessage(client *Client, message Message, payload IdentityMess
 		client *Client
 	}{updateId, client}
 
-	zap.S().Debugf(
+	zap.S().Debugw(
 		"Update request was sent",
 		"id", client.id,
 		"peerId", client.peerId,
@@ -250,7 +250,7 @@ func HandleIdentityMessage(client *Client, message Message, payload IdentityMess
 }
 
 func HandleMessage(client *Client) (Message, error) {
-	zap.S().Debugf(
+	zap.S().Debugw(
 		"Handling client incoming messages",
 		"id", client.id,
 	)
@@ -279,7 +279,7 @@ func HandleMessage(client *Client) (Message, error) {
 			return Message{}, err
 		}
 
-		zap.S().Debugf(
+		zap.S().Debugw(
 			"Payload was marshaled",
 			"payload", string(data),
 		)
@@ -309,7 +309,7 @@ func HandleMessage(client *Client) (Message, error) {
 			return Message{}, err
 		}
 
-		zap.S().Debugf(
+		zap.S().Debugw(
 			"Payload was marshaled",
 			"payload", string(data),
 		)

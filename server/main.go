@@ -45,6 +45,18 @@ func wsHandler(hub *Hub, r *http.Request, w http.ResponseWriter) {
 	go client.WritePump()
 }
 
+func printOptions() {
+  zap.S().Warnw(
+    "Server started with these options",
+    "Env", options.Env,
+    "Domain", options.Domain,
+    "Port", options.Port,
+    "Log Level", options.LogLevel.String(),
+    "Read Buffer Size", options.ReadBufferSize,
+    "Write Buffer Size", options.WriteBufferSize,
+  )
+}
+
 func Main() {
 	options = InitOptions()
 
@@ -57,6 +69,8 @@ func Main() {
 		LogLevel:    options.LogLevel,
 		LogFileName: ".server.squirrel.log",
 	})
+
+  printOptions()
 
 	// Sync both loggers since they're all used
 	defer func() {
