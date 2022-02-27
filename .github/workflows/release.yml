@@ -11,6 +11,14 @@ on:
 permissions:
   contents: write
 
+env:
+  APP_ENV: prod
+  LOG_LEVEL: error
+  PORT: 3000
+  READ_BUFFER_SIZE: 0
+  WRITE_BUFFER_SIZE: 0
+  DOMAIN: ${{ secrets.DOMAIN }}
+
 jobs:
   release:
     runs-on: ubuntu-latest

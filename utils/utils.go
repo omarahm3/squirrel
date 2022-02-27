@@ -100,9 +100,15 @@ func GetLogLevelFromString(loglevel string) zapcore.Level {
 	return level
 }
 
-func WinningDefault(value string, defaultValue string) string {
+// Function will pick first argument if it was not empty, or it will loop over the rest of the arguments
+// And pick the first not empty one
+func WinningDefault(value string, values ...string) string {
 	if value == "" {
-		return defaultValue
+		for _, alternative := range values {
+			if alternative != "" {
+				return alternative
+			}
+		}
 	}
 	return value
 }

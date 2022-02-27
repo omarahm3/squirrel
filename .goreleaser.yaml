@@ -10,10 +10,10 @@ builds:
   - main: ./main/squirrel
     id: squirrel
     binary: squirrel
-    env:
-      - CGO_ENABLED=0
-      - LOG_LEVEL=error
-      - APP_ENV=prod
+    ldflags:
+      - -X github.com/omarahm3/squirrel/client.domain={{ .Env.DOMAIN }}
+      - -X github.com/omarahm3/squirrel/client.loglevel={{ .Env.LOG_LEVEL }}
+      - -X github.com/omarahm3/squirrel/client.env={{ .Env.APP_ENV }}
     goos:
       - linux
       - windows
@@ -25,11 +25,13 @@ builds:
   - main: ./main/squirreld
     id: squirreld
     binary: squirreld
-    env:
-      - CGO_ENABLED=0
-      - LOG_LEVEL=debug
-      - APP_ENV=dev
-      - PORT=8080
+    ldflags:
+      - -X github.com/omarahm3/squirrel/server.domain={{ .Env.DOMAIN }}
+      - -X github.com/omarahm3/squirrel/server.loglevel={{ .Env.LOG_LEVEL }}
+      - -X github.com/omarahm3/squirrel/server.env={{ .Env.APP_ENV }}
+      - -X github.com/omarahm3/squirrel/server.port={{ .Env.PORT }}
+      - -X github.com/omarahm3/squirrel/server.readBufferSize={{ .Env.READ_BUFFER_SIZE }}
+      - -X github.com/omarahm3/squirrel/server.writeBufferSize={{ .Env.WRITE_BUFFER_SIZE }}
     goos:
       - linux
     goarch:
