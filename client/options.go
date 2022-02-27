@@ -21,6 +21,12 @@ const (
 	DEFAULT_LOG_LEVEL   = "error"
 )
 
+var (
+  env      string
+  domain   string
+  loglevel string
+)
+
 func fprintf(format string, a ...interface{}) {
 	fmt.Fprintf(os.Stderr, format, a...)
 }
@@ -33,15 +39,9 @@ func InitOptions() *ClientOptions {
 		flag.PrintDefaults()
 	}
 
-	var (
-		env      string = utils.GetEnvVariable("APP_ENV")
-		domain   string = utils.GetEnvVariable("DOMAIN")
-		loglevel string = utils.GetEnvVariable("LOG_LEVEL")
-	)
-
-	flag.StringVar(&env, "env", utils.WinningDefault(utils.GetEnvVariable("APP_ENV"), DEFAULT_ENVIRONMENT), "Client environment (prod|dev)")
-	flag.StringVar(&domain, "domain", utils.WinningDefault(utils.GetEnvVariable("DOMAIN"), DEFAULT_DOMAIN), "Server domain")
-	flag.StringVar(&loglevel, "log", utils.WinningDefault(utils.GetEnvVariable("LOG_LEVEL"), DEFAULT_LOG_LEVEL), "Log level")
+	flag.StringVar(&env, "env", utils.WinningDefault(utils.GetEnvVariable("APP_ENV"), env, DEFAULT_ENVIRONMENT), "Client environment (prod|dev)")
+	flag.StringVar(&domain, "domain", utils.WinningDefault(utils.GetEnvVariable("DOMAIN"), domain, DEFAULT_DOMAIN), "Server domain")
+	flag.StringVar(&loglevel, "log", utils.WinningDefault(utils.GetEnvVariable("LOG_LEVEL"), loglevel, DEFAULT_LOG_LEVEL), "Log level")
 	flag.Parse()
 
 	return &ClientOptions{
