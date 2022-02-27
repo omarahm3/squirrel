@@ -34,7 +34,7 @@ func Main() {
 
 	zap.S().Debug("Client ID was generated: ", clientId)
 
-	fmt.Printf("Link: [ http://%s/client/%s ]\n", options.Domain, clientId)
+	fmt.Printf("Link: [ %s/client/%s ]\n", options.Domain.Public, clientId)
 
 	signal.Notify(interrupt, os.Interrupt)
 

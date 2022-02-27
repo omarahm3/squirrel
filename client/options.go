@@ -3,15 +3,21 @@ package client
 import (
 	"flag"
 	"fmt"
+	"net/url"
 	"os"
 
 	"github.com/omarahm3/squirrel/utils"
 	"go.uber.org/zap/zapcore"
 )
 
+type Domain struct {
+	Public    string
+	Websocket string
+}
+
 type ClientOptions struct {
 	Env      string
-	Domain   string
+	Domain   *Domain
 	LogLevel zapcore.Level
 }
 
@@ -31,6 +37,29 @@ func fprintf(format string, a ...interface{}) {
 	fmt.Fprintf(os.Stderr, format, a...)
 }
 
+func buildDomain(domain string, env string) *Domain {
+	var s string
+
+	if env == "prod" {
+		s = "s"
+	}
+
+	public := url.URL{
+		Scheme: fmt.Sprintf("http%s", s),
+		Host:   domain,
+	}
+
+	websocket := url.URL{
+		Scheme: fmt.Sprintf("ws%s", s),
+		Host:   domain,
+	}
+
+	return &Domain{
+		Public:    public.String(),
+		Websocket: websocket.String(),
+	}
+}
+
 func InitOptions() *ClientOptions {
 	flag.Usage = func() {
 		fprintf("Usage of %s:\n", os.Args[0])
@@ -46,7 +75,7 @@ func InitOptions() *ClientOptions {
 
 	return &ClientOptions{
 		Env:      env,
-		Domain:   domain,
+		Domain:   buildDomain(domain, env),
 		LogLevel: utils.GetLogLevelFromString(loglevel),
 	}
 }
