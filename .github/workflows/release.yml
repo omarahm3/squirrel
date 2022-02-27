@@ -11,6 +11,11 @@ on:
 permissions:
   contents: write
 
+env:
+  APP_ENV: prod
+  LOG_LEVE: error
+  DOMAIN: ${{ secrets.DOMAIN }}
+
 jobs:
   release:
     runs-on: ubuntu-latest
