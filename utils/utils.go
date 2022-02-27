@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"strconv"
 	"time"
@@ -11,6 +12,11 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
+
+type Domain struct {
+	Public    string
+	Websocket string
+}
 
 type LoggerOptions struct {
 	Env         string
@@ -111,4 +117,27 @@ func WinningDefault(value string, values ...string) string {
 		}
 	}
 	return value
+}
+
+func BuildDomain(domain string, env string) *Domain {
+	var s string
+
+	if env == "prod" {
+		s = "s"
+	}
+
+	public := url.URL{
+		Scheme: fmt.Sprintf("http%s", s),
+		Host:   domain,
+	}
+
+	websocket := url.URL{
+		Scheme: fmt.Sprintf("ws%s", s),
+		Host:   domain,
+	}
+
+	return &Domain{
+		Public:    public.String(),
+		Websocket: websocket.String(),
+	}
 }
