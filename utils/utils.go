@@ -84,6 +84,17 @@ func FatalError(message string, err error) {
 	os.Exit(1)
 }
 
+func StrToInt64(value string) int64 {
+	intVal, err := strconv.ParseInt(value, 10, 64)
+
+	if err != nil {
+		fmt.Println("Error converting value to int64", err)
+		os.Exit(1)
+	}
+
+	return intVal
+}
+
 func StrToInt(value string) int {
 	intVal, err := strconv.Atoi(value)
 

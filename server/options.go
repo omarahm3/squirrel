@@ -16,6 +16,7 @@ type ServerOptions struct {
 	LogLevel        zapcore.Level
 	ReadBufferSize  int
 	WriteBufferSize int
+	MaxMessageSize  int64
 }
 
 const (
@@ -25,6 +26,7 @@ const (
 	DEFAULT_LOG_LEVEL         = "warn"
 	DEFAULT_READ_BUFFER_SIZE  = "0"
 	DEFAULT_WRITE_BUFFER_SIZE = "0"
+	DEFAULT_MAX_MESSAGE_SIZE  = "1024"
 )
 
 var (
@@ -34,6 +36,7 @@ var (
 	loglevel        string
 	readBufferSize  string
 	writeBufferSize string
+	maxMessageSize  string
 )
 
 func fprintf(format string, a ...interface{}) {
@@ -55,6 +58,7 @@ func InitOptions() *ServerOptions {
 	flag.StringVar(&port, "port", utils.WinningDefault(utils.GetEnvVariable("PORT"), port, DEFAULT_PORT), "Server port")
 	flag.StringVar(&readBufferSize, "read-buffer-size", utils.WinningDefault(utils.GetEnvVariable("READ_BUFFER_SIZE"), readBufferSize, DEFAULT_READ_BUFFER_SIZE), "Websocket read buffer size")
 	flag.StringVar(&writeBufferSize, "write-buffer-size", utils.WinningDefault(utils.GetEnvVariable("WRITE_BUFFER_SIZE"), writeBufferSize, DEFAULT_WRITE_BUFFER_SIZE), "Websocket write buffer size")
+	flag.StringVar(&maxMessageSize, "max-message-size", utils.WinningDefault(utils.GetEnvVariable("MAX_MESSAGE_SIZE"), maxMessageSize, DEFAULT_MAX_MESSAGE_SIZE), "Websocket maximum message size")
 	flag.Parse()
 
 	return &ServerOptions{
@@ -64,5 +68,6 @@ func InitOptions() *ServerOptions {
 		LogLevel:        utils.GetLogLevelFromString(loglevel),
 		ReadBufferSize:  utils.StrToInt(readBufferSize),
 		WriteBufferSize: utils.StrToInt(writeBufferSize),
+		MaxMessageSize:  utils.StrToInt64(maxMessageSize),
 	}
 }
