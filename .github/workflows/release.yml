@@ -13,7 +13,10 @@ permissions:
 
 env:
   APP_ENV: prod
-  LOG_LEVE: error
+  LOG_LEVEL: error
+  PORT: 3000
+  READ_BUFFER_SIZE: 0
+  WRITE_BUFFER_SIZE: 0
   DOMAIN: ${{ secrets.DOMAIN }}
 
 jobs:
