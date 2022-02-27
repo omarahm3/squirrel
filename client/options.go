@@ -17,6 +17,7 @@ type ClientOptions struct {
 
 const (
 	DEFAULT_ENVIRONMENT = "prod"
+	DEFAULT_DOMAIN      = "localhost:3000"
 	DEFAULT_LOG_LEVEL   = "error"
 )
 
