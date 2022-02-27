@@ -12,22 +12,16 @@ import (
 )
 
 var interrupt chan os.Signal
-var DOMAIN string
-
-const DEFAULT_DOMAIN = "squirrel-jwls9.ondigitalocean.app"
+var options *ClientOptions
 
 func Main() {
+	options = InitOptions()
 	interrupt = make(chan os.Signal) // Channel to listen for interrupt signal to gracefully terminate
 	input := make(chan string)
-	DOMAIN = utils.GetEnvVariable("DOMAIN")
-
-	if DOMAIN == "" {
-		DOMAIN = DEFAULT_DOMAIN
-	}
 
 	utils.InitLogging(utils.LoggerOptions{
-		Env:         utils.GetEnv(),
-		LogLevel:    zap.ErrorLevel,
+		Env:         options.Env,
+		LogLevel:    options.LogLevel,
 		LogFileName: ".squirrel.log",
 	})
 
@@ -40,7 +34,7 @@ func Main() {
 
 	zap.S().Debug("Client ID was generated: ", clientId)
 
-	fmt.Printf("Link: [ http://%s/client/%s ]\n", DOMAIN, clientId)
+	fmt.Printf("Link: [ http://%s/client/%s ]\n", options.Domain, clientId)
 
 	signal.Notify(interrupt, os.Interrupt)
 
