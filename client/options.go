@@ -13,6 +13,7 @@ type ClientOptions struct {
 	Env      string
 	Domain   *utils.Domain
 	LogLevel zapcore.Level
+	PeerId   string
 }
 
 const (
@@ -25,6 +26,7 @@ var (
 	env      string
 	domain   string
 	loglevel string
+	peer     string
 )
 
 func fprintf(format string, a ...interface{}) {
@@ -42,11 +44,13 @@ func InitOptions() *ClientOptions {
 	flag.StringVar(&env, "env", utils.WinningDefault(utils.GetEnvVariable("APP_ENV"), env, DEFAULT_ENVIRONMENT), "Client environment (prod|dev)")
 	flag.StringVar(&domain, "domain", utils.WinningDefault(utils.GetEnvVariable("DOMAIN"), domain, DEFAULT_DOMAIN), "Server domain")
 	flag.StringVar(&loglevel, "log", utils.WinningDefault(utils.GetEnvVariable("LOG_LEVEL"), loglevel, DEFAULT_LOG_LEVEL), "Log level")
+	flag.StringVar(&peer, "peer", "", "Peer client ID")
 	flag.Parse()
 
 	return &ClientOptions{
 		Env:      env,
 		Domain:   utils.BuildDomain(domain, env),
 		LogLevel: utils.GetLogLevelFromString(loglevel),
+		PeerId:   peer,
 	}
 }
