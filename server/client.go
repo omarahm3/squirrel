@@ -22,13 +22,14 @@ var (
 )
 
 type Client struct {
-	id         string
-	local      bool
-	connection *websocket.Conn
-	hub        *Hub
-	send       chan []byte
-	peerId     string
-	active     bool
+	id          string
+	broadcaster bool
+	subscriber  bool
+	connection  *websocket.Conn
+	hub         *Hub
+	send        chan []byte
+	peerId      string
+	active      bool
 }
 
 func (client *Client) ReadPump() {
@@ -63,10 +64,10 @@ func (client *Client) ReadPump() {
 			break
 		}
 
-		// If this is a local client sending us the very first request
-		if !client.local && message.Id != "" {
+		// If this is a broadcaster client sending us the very first request
+		if !client.broadcaster && message.Id != "" {
 			zap.S().Debugw(
-				"Local client connection, updating client ID",
+				"Broadcaster client connection, updating client ID",
 				"oldId", client.id,
 				"newId", message.Id,
 			)
@@ -202,23 +203,23 @@ func HandleIdentityMessage(client *Client, message Message, payload IdentityMess
 
 	var updateId string
 
-	// In case this is a local peer
-	if payload.Local {
+	// In case this is a broadcaster peer
+	if payload.Broadcaster {
 		zap.S().Debugw(
-			"Preparing local client",
+			"Preparing broadcaster client",
 			"updateId", client.id,
-			"local", payload.Local,
+			"broadcaster", payload.Broadcaster,
 		)
 
 		updateId = client.id
 		client.id = message.Id
-		client.local = payload.Local
+		client.broadcaster = payload.Broadcaster
 		client.peerId = ""
 	} else {
 		zap.S().Debugw(
 			"Preparing remote client",
 			"updateId", client.id,
-			"local", payload.Local,
+			"broadcaster", payload.Broadcaster,
 		)
 
 		if payload.PeerId == "" {
@@ -244,7 +245,7 @@ func HandleIdentityMessage(client *Client, message Message, payload IdentityMess
 		"id", client.id,
 		"peerId", client.peerId,
 		"active", client.active,
-		"local", client.local,
+		"broadcaster", client.broadcaster,
 	)
 }
 

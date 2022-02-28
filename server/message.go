@@ -11,6 +11,7 @@ type LogMessage struct {
 }
 
 type IdentityMessage struct {
-	PeerId string `json:"peerId"`
-	Local  bool   `json:"local"`
+	PeerId      string `json:"peerId"`
+	Broadcaster bool   `json:"broadcaster"`
+	Subscriber  bool   `json:"subscriber"`
 }
