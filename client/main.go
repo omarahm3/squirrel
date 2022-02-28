@@ -43,13 +43,13 @@ func Main() {
 
 	SendIdentity(connection, clientId)
 
-	if options.Listen {
-		go HandleIncomingMessages(connection)
-	} else {
+	if !options.Listen {
 		fmt.Printf("Link: [ %s/client/%s ]\n", options.Domain.Public, clientId)
-		go ScanFile(input)
-		go HandleSendEvents(input, connection)
 	}
+
+	go ScanFile(input)
+	go HandleSendEvents(input, connection)
+	go HandleIncomingMessages(connection)
 
 	// Main CLI loop
 	for {
@@ -61,10 +61,14 @@ func Main() {
 }
 
 func HandleSendEvents(input chan string, connection *websocket.Conn) {
+	defer func() {
+		connection.Close()
+		zap.S().Info("Client connection closed")
+	}()
+
 	// Here we receive packets
 	for {
 		line := <-input
-		// log.Printf("[%s] %s\n", clientId, line)
 		err := connection.WriteJSON(Message{
 			Id:    clientId,
 			Event: "log_line",

@@ -52,6 +52,7 @@ func (client *Client) ReadPump() {
 	client.connection.SetReadLimit(options.MaxMessageSize)
 	client.connection.SetReadDeadline(readDeadline)
 	client.connection.SetPongHandler(func(_ string) error {
+		zap.S().Debug("Received Pong message")
 		client.connection.SetReadDeadline(time.Now().Add(PONG_WAIT))
 		return nil
 	})
