@@ -67,7 +67,9 @@ func HandleIncomingMessages(connection *websocket.Conn) {
 	for {
 		_, message, err := connection.ReadMessage()
 
-		zap.S().Debug("Incoming message: ", string(message))
+    if options.Listen && options.PeerId != "" {
+      fmt.Println(string(message))
+    }
 
 		if err != nil {
 			zap.L().Error("Error while reading incoming message", zap.Error(err))
