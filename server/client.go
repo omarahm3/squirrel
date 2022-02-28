@@ -60,8 +60,8 @@ func (client *Client) ReadPump() {
 		message, err := HandleMessage(client)
 
 		if err != nil {
-			zap.L().Error("Error handling message, breaking connection loop", zap.Error(err))
-			break
+			zap.L().Error("Error handling message, disconnecting peer", zap.Error(err), zap.String("peerId", client.id))
+			return
 		}
 
 		// If this is a broadcaster client sending us the very first request
@@ -197,8 +197,10 @@ func HandleNewLogLine(client *Client, message LogMessage) {
 func HandleIdentityMessage(client *Client, message Message, payload IdentityMessage) {
 	zap.S().Debugw(
 		"Handling identity message",
-		"message", string(message.Event),
+		"event", string(message.Event),
 		"clientId", client.id,
+		"broadcaster", payload.Broadcaster,
+		"subscriber", payload.Subscriber,
 	)
 
 	var updateId string
@@ -209,6 +211,7 @@ func HandleIdentityMessage(client *Client, message Message, payload IdentityMess
 			"Preparing broadcaster client",
 			"updateId", client.id,
 			"broadcaster", payload.Broadcaster,
+			"subscriber", payload.Subscriber,
 		)
 
 		updateId = client.id
@@ -220,6 +223,7 @@ func HandleIdentityMessage(client *Client, message Message, payload IdentityMess
 			"Preparing remote client",
 			"updateId", client.id,
 			"broadcaster", payload.Broadcaster,
+			"subscriber", payload.Subscriber,
 		)
 
 		if payload.PeerId == "" {
@@ -229,6 +233,7 @@ func HandleIdentityMessage(client *Client, message Message, payload IdentityMess
 
 		updateId = client.id
 		client.peerId = payload.PeerId
+		client.subscriber = payload.Subscriber
 	}
 
 	zap.S().Debug("Setting client as active")
@@ -246,6 +251,7 @@ func HandleIdentityMessage(client *Client, message Message, payload IdentityMess
 		"peerId", client.peerId,
 		"active", client.active,
 		"broadcaster", client.broadcaster,
+		"subscriber", client.subscriber,
 	)
 }
 
@@ -256,6 +262,14 @@ func HandleMessage(client *Client) (Message, error) {
 	)
 
 	var message Message
+
+	zap.S().Debugw(
+		"Reading message of client",
+		"client", client.id,
+		"broadcaster", client.broadcaster,
+		"subscriber", client.subscriber,
+	)
+
 	err := client.connection.ReadJSON(&message)
 
 	if err != nil {
