@@ -14,6 +14,8 @@ builds:
       - -X github.com/omarahm3/squirrel/client.domain={{ .Env.DOMAIN }}
       - -X github.com/omarahm3/squirrel/client.loglevel={{ .Env.LOG_LEVEL }}
       - -X github.com/omarahm3/squirrel/client.env={{ .Env.APP_ENV }}
+      - -s
+      - -w
     goos:
       - linux
       - windows
@@ -32,6 +34,8 @@ builds:
       - -X github.com/omarahm3/squirrel/server.port={{ .Env.PORT }}
       - -X github.com/omarahm3/squirrel/server.readBufferSize={{ .Env.READ_BUFFER_SIZE }}
       - -X github.com/omarahm3/squirrel/server.writeBufferSize={{ .Env.WRITE_BUFFER_SIZE }}
+      - -s
+      - -w
     goos:
       - linux
     goarch:
