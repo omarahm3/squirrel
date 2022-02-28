@@ -13,6 +13,7 @@ import (
 
 var interrupt chan os.Signal
 var options *ClientOptions
+var clientId string
 
 func Main() {
 	options = InitOptions()
@@ -30,11 +31,9 @@ func Main() {
 		_ = zap.S().Sync()
 	}()
 
-	clientId := utils.GenerateUUID()
+	clientId = utils.GenerateUUID()
 
 	zap.S().Debug("Client ID was generated: ", clientId)
-
-	fmt.Printf("Link: [ %s/client/%s ]\n", options.Domain.Public, clientId)
 
 	signal.Notify(interrupt, os.Interrupt)
 
@@ -44,30 +43,38 @@ func Main() {
 
 	SendIdentity(connection, clientId)
 
-	go ScanFile(input)
-	go HandleIncomingMessages(connection)
+	if options.Listen {
+		go HandleIncomingMessages(connection)
+	} else {
+		fmt.Printf("Link: [ %s/client/%s ]\n", options.Domain.Public, clientId)
+		go ScanFile(input)
+		go HandleSendEvents(input, connection)
+	}
 
-	// Main loop of the client
-	// Here we send & receive packets
+	// Main CLI loop
 	for {
-		select {
-		case line := <-input:
-			// log.Printf("[%s] %s\n", clientId, line)
-			err := connection.WriteJSON(Message{
-				Id:    clientId,
-				Event: "log_line",
-				Payload: LogMessage{
-					Line: line,
-				},
-			})
+		<-interrupt
+		zap.S().Info("Received SIGINT interrupt signal. Closing all pending connections")
+		HandleWebsocketClose(connection)
+		return
+	}
+}
 
-			if err != nil {
-				zap.S().Error("Error during sending message to websocket:", zap.Error(err))
-				return
-			}
-		case <-interrupt:
-			zap.S().Info("Received SIGINT interrupt signal. Closing all pending connections")
-			HandleWebsocketClose(connection)
+func HandleSendEvents(input chan string, connection *websocket.Conn) {
+	// Here we receive packets
+	for {
+		line := <-input
+		// log.Printf("[%s] %s\n", clientId, line)
+		err := connection.WriteJSON(Message{
+			Id:    clientId,
+			Event: "log_line",
+			Payload: LogMessage{
+				Line: line,
+			},
+		})
+
+		if err != nil {
+			zap.S().Error("Error during sending message to websocket:", zap.Error(err))
 			return
 		}
 	}
@@ -78,7 +85,7 @@ func SendIdentity(connection *websocket.Conn, clientId string) {
 	var subscriber bool
 	broadcaster := true
 
-	if options.PeerId != "" {
+	if options.PeerId != "" && options.Listen {
 		peerId = options.PeerId
 		subscriber = true
 		broadcaster = false
