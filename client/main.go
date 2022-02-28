@@ -78,7 +78,9 @@ func SendIdentity(connection *websocket.Conn, clientId string) {
 		Id:    clientId,
 		Event: "identity",
 		Payload: IdentityMessage{
-			Local: true,
+			PeerId:      "",
+			Broadcastor: true,
+			Subscriber:  false,
 		},
 	}
 
