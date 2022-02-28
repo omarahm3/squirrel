@@ -15,8 +15,9 @@ type LogMessage struct {
 }
 
 type IdentityMessage struct {
-	PeerId string `json:"peerId"`
-	Local  bool   `json:"local"`
+	PeerId      string `json:"peerId"`
+	Broadcaster bool   `json:"broadcaster"`
+	Subscriber  bool   `json:"subscriber"`
 }
 
 type Message struct {
@@ -66,7 +67,9 @@ func HandleIncomingMessages(connection *websocket.Conn) {
 	for {
 		_, message, err := connection.ReadMessage()
 
-		zap.S().Debug("Incoming message: ", string(message))
+		if options.Listen && options.PeerId != "" {
+			fmt.Println(string(message))
+		}
 
 		if err != nil {
 			zap.L().Error("Error while reading incoming message", zap.Error(err))

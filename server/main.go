@@ -30,11 +30,11 @@ func wsHandler(hub *Hub, r *http.Request, w http.ResponseWriter) {
 	zap.S().Info("Websocket connection was successful")
 
 	client := &Client{
-		id:         utils.GenerateUUID(),
-		connection: connection,
-		hub:        hub,
-		local:      false,
-		send:       make(chan []byte, 256),
+		id:          utils.GenerateUUID(),
+		connection:  connection,
+		hub:         hub,
+		broadcaster: false,
+		send:        make(chan []byte, 256),
 	}
 
 	zap.S().Infow("Initialized new client", "clientId", client.id)

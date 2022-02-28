@@ -33,7 +33,7 @@
       send(JSON.stringify({
         event: 'identity',
         payload: {
-          local: false,
+          subscriber: true,
           peerId: {{ .clientId}}
         }
       }))

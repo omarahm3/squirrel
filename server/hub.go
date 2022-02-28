@@ -59,7 +59,8 @@ func (h *Hub) Run() {
 			zap.S().Infow("Adding client to hub",
 				"id", client.id,
 				"active", client.active,
-				"local", client.local,
+				"broadcaster", client.broadcaster,
+				"subscriber", client.subscriber,
 				"peerId", client.peerId)
 
 			h.clients[client.id] = client
@@ -84,10 +85,11 @@ func (h *Hub) Run() {
 
 			for _, client := range h.clients {
 				// Ignore any client and only accept client that has the link
-				if client.local || !client.active || client.peerId != message.clientId {
+				if client.broadcaster || !client.subscriber || !client.active || client.peerId != message.clientId {
 					zap.S().Debugw("Ignoring broadcasting message to this client",
 						"clientId", client.id,
-						"local", client.local,
+						"broadcaster", client.broadcaster,
+						"subscriber", client.subscriber,
 						"active", client.active)
 
 					continue
@@ -95,7 +97,8 @@ func (h *Hub) Run() {
 
 				zap.S().Debugw("Sending message to client",
 					"clientId", client.id,
-					"local", client.local,
+					"broadcaster", client.broadcaster,
+					"subscriber", client.subscriber,
 					"active", client.active)
 
 				select {

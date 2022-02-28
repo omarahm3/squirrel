@@ -22,13 +22,14 @@ var (
 )
 
 type Client struct {
-	id         string
-	local      bool
-	connection *websocket.Conn
-	hub        *Hub
-	send       chan []byte
-	peerId     string
-	active     bool
+	id          string
+	broadcaster bool
+	subscriber  bool
+	connection  *websocket.Conn
+	hub         *Hub
+	send        chan []byte
+	peerId      string
+	active      bool
 }
 
 func (client *Client) ReadPump() {
@@ -51,6 +52,7 @@ func (client *Client) ReadPump() {
 	client.connection.SetReadLimit(options.MaxMessageSize)
 	client.connection.SetReadDeadline(readDeadline)
 	client.connection.SetPongHandler(func(_ string) error {
+		zap.S().Debug("Received Pong message")
 		client.connection.SetReadDeadline(time.Now().Add(PONG_WAIT))
 		return nil
 	})
@@ -59,14 +61,14 @@ func (client *Client) ReadPump() {
 		message, err := HandleMessage(client)
 
 		if err != nil {
-			zap.L().Error("Error handling message, breaking connection loop", zap.Error(err))
-			break
+			zap.L().Error("Error handling message, disconnecting peer", zap.Error(err), zap.String("peerId", client.id))
+			return
 		}
 
-		// If this is a local client sending us the very first request
-		if !client.local && message.Id != "" {
+		// If this is a broadcaster client sending us the very first request
+		if !client.broadcaster && message.Id != "" {
 			zap.S().Debugw(
-				"Local client connection, updating client ID",
+				"Broadcaster client connection, updating client ID",
 				"oldId", client.id,
 				"newId", message.Id,
 			)
@@ -196,29 +198,33 @@ func HandleNewLogLine(client *Client, message LogMessage) {
 func HandleIdentityMessage(client *Client, message Message, payload IdentityMessage) {
 	zap.S().Debugw(
 		"Handling identity message",
-		"message", string(message.Event),
+		"event", string(message.Event),
 		"clientId", client.id,
+		"broadcaster", payload.Broadcaster,
+		"subscriber", payload.Subscriber,
 	)
 
 	var updateId string
 
-	// In case this is a local peer
-	if payload.Local {
+	// In case this is a broadcaster peer
+	if payload.Broadcaster {
 		zap.S().Debugw(
-			"Preparing local client",
+			"Preparing broadcaster client",
 			"updateId", client.id,
-			"local", payload.Local,
+			"broadcaster", payload.Broadcaster,
+			"subscriber", payload.Subscriber,
 		)
 
 		updateId = client.id
 		client.id = message.Id
-		client.local = payload.Local
+		client.broadcaster = payload.Broadcaster
 		client.peerId = ""
 	} else {
 		zap.S().Debugw(
 			"Preparing remote client",
 			"updateId", client.id,
-			"local", payload.Local,
+			"broadcaster", payload.Broadcaster,
+			"subscriber", payload.Subscriber,
 		)
 
 		if payload.PeerId == "" {
@@ -228,6 +234,7 @@ func HandleIdentityMessage(client *Client, message Message, payload IdentityMess
 
 		updateId = client.id
 		client.peerId = payload.PeerId
+		client.subscriber = payload.Subscriber
 	}
 
 	zap.S().Debug("Setting client as active")
@@ -244,7 +251,8 @@ func HandleIdentityMessage(client *Client, message Message, payload IdentityMess
 		"id", client.id,
 		"peerId", client.peerId,
 		"active", client.active,
-		"local", client.local,
+		"broadcaster", client.broadcaster,
+		"subscriber", client.subscriber,
 	)
 }
 
@@ -255,6 +263,14 @@ func HandleMessage(client *Client) (Message, error) {
 	)
 
 	var message Message
+
+	zap.S().Debugw(
+		"Reading message of client",
+		"client", client.id,
+		"broadcaster", client.broadcaster,
+		"subscriber", client.subscriber,
+	)
+
 	err := client.connection.ReadJSON(&message)
 
 	if err != nil {
