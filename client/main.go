@@ -74,13 +74,23 @@ func Main() {
 }
 
 func SendIdentity(connection *websocket.Conn, clientId string) {
+	var peerId string
+	var subscriber bool
+	broadcaster := true
+
+	if options.PeerId != "" {
+		peerId = options.PeerId
+		subscriber = true
+		broadcaster = false
+	}
+
 	message := Message{
 		Id:    clientId,
 		Event: "identity",
 		Payload: IdentityMessage{
-			PeerId:      "",
-			Broadcaster: true,
-			Subscriber:  false,
+			PeerId:      peerId,
+			Broadcaster: broadcaster,
+			Subscriber:  subscriber,
 		},
 	}
 
