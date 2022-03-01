@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -45,7 +46,6 @@ func (client *Client) ReadPump() {
 		zap.S().Info("Removing client")
 		client.hub.unregister <- client
 		zap.S().Info("Closing client connection")
-		// client.connection.WriteMessage(websocket.CloseMessage, []byte{})
 		client.connection.Close()
 	}()
 
@@ -204,7 +204,7 @@ func HandleNewLogLine(client *Client, message LogMessage) {
 	}
 }
 
-func HandleIdentityMessage(client *Client, message Message, payload IdentityMessage) {
+func HandleIdentityMessage(client *Client, message Message, payload IdentityMessage) error {
 	zap.S().Debugw(
 		"Handling identity message",
 		"event", string(message.Event),
@@ -238,7 +238,7 @@ func HandleIdentityMessage(client *Client, message Message, payload IdentityMess
 
 		if payload.PeerId == "" {
 			zap.S().Warn("Remote client identity was sent with empty peerId, discarding...")
-			return
+			return nil
 		}
 
 		updateId = client.id
@@ -255,6 +255,12 @@ func HandleIdentityMessage(client *Client, message Message, payload IdentityMess
 		client *Client
 	}{updateId, client}
 
+	if client.IsActiveSubscriber() {
+		if _, ok := client.hub.clients[client.peerId]; !ok {
+			return fmt.Errorf("Client ID: [%s] doesn't exist on the hub", client.peerId)
+		}
+	}
+
 	zap.S().Debugw(
 		"Update request was sent",
 		"id", client.id,
@@ -263,6 +269,8 @@ func HandleIdentityMessage(client *Client, message Message, payload IdentityMess
 		"broadcaster", client.broadcaster,
 		"subscriber", client.subscriber,
 	)
+
+	return nil
 }
 
 func HandleMessage(client *Client) (Message, error) {
@@ -313,7 +321,11 @@ func HandleMessage(client *Client) (Message, error) {
 			return Message{}, err
 		}
 
-		HandleIdentityMessage(client, message, identityMessage)
+		err = HandleIdentityMessage(client, message, identityMessage)
+
+		if err != nil {
+			return Message{}, err
+		}
 
 	case EVENT_LOG_LINE:
 		if !client.active {
