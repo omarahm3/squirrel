@@ -283,9 +283,7 @@ func HandleMessage(client *Client) (Message, error) {
 	err := client.connection.ReadJSON(&message)
 
 	if err != nil {
-		zap.L().Error("Error occurred while reading incoming JSON message", zap.Error(err))
-
-		if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+		if websocket.IsCloseError(err, websocket.CloseAbnormalClosure, websocket.CloseGoingAway) {
 			zap.L().Warn("Unexpected websocket close, peer is disconnected, ignoring message...")
 		}
 
