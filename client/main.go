@@ -11,9 +11,16 @@ import (
 	"go.uber.org/zap"
 )
 
+type ControllerMessage struct {
+	Message    string
+	Error      error
+	Connection *websocket.Conn
+}
+
 var interrupt chan os.Signal
 var options *ClientOptions
 var clientId string
+var controller = make(chan int)
 
 func Main() {
 	options = InitOptions()
@@ -53,10 +60,13 @@ func Main() {
 
 	// Main CLI loop
 	for {
-		<-interrupt
-		zap.S().Info("Received SIGINT interrupt signal. Closing all pending connections")
-		HandleWebsocketClose(connection)
-		return
+		select {
+		case <-interrupt:
+			zap.S().Info("Received SIGINT interrupt signal. Closing all pending connections")
+			return
+		case <-controller:
+			return
+		}
 	}
 }
 

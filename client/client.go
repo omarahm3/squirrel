@@ -72,19 +72,21 @@ func HandleIncomingMessages(connection *websocket.Conn) {
 		}
 
 		if err != nil {
-			zap.L().Error("Error while reading incoming message", zap.Error(err))
+			HandleWebsocketClose(ControllerMessage{
+				Error:      err,
+				Connection: connection,
+				Message:    "Error while reading incoming message",
+			})
 			break
 		}
 	}
 }
 
-func HandleWebsocketClose(connection *websocket.Conn) {
-	zap.L().Info("Closing websocket connection")
-
-	err := connection.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
-
-	if err != nil {
-		zap.L().Error("Error during closing websocket:", zap.Error(err))
-		return
+func HandleWebsocketClose(message ControllerMessage) {
+	if websocket.IsUnexpectedCloseError(message.Error, websocket.CloseGoingAway, websocket.CloseNormalClosure, websocket.CloseMessage) {
+		controller <- 1
+	} else {
+		controller <- 0
+		zap.L().Error("Error occurred, closing websocket connection", zap.Error(message.Error))
 	}
 }
