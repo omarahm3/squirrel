@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -30,6 +31,14 @@ type Client struct {
 	send        chan []byte
 	peerId      string
 	active      bool
+}
+
+func (client *Client) IsActiveBroadcaster() bool {
+	return client.broadcaster && client.active
+}
+
+func (client *Client) IsActiveSubscriber() bool {
+	return client.subscriber && client.active && client.peerId != ""
 }
 
 func (client *Client) ReadPump() {
@@ -195,7 +204,7 @@ func HandleNewLogLine(client *Client, message LogMessage) {
 	}
 }
 
-func HandleIdentityMessage(client *Client, message Message, payload IdentityMessage) {
+func HandleIdentityMessage(client *Client, message Message, payload IdentityMessage) error {
 	zap.S().Debugw(
 		"Handling identity message",
 		"event", string(message.Event),
@@ -229,7 +238,7 @@ func HandleIdentityMessage(client *Client, message Message, payload IdentityMess
 
 		if payload.PeerId == "" {
 			zap.S().Warn("Remote client identity was sent with empty peerId, discarding...")
-			return
+			return nil
 		}
 
 		updateId = client.id
@@ -246,6 +255,12 @@ func HandleIdentityMessage(client *Client, message Message, payload IdentityMess
 		client *Client
 	}{updateId, client}
 
+	if client.IsActiveSubscriber() {
+		if _, ok := client.hub.clients[client.peerId]; !ok {
+			return fmt.Errorf("Client ID: [%s] doesn't exist on the hub", client.peerId)
+		}
+	}
+
 	zap.S().Debugw(
 		"Update request was sent",
 		"id", client.id,
@@ -254,6 +269,8 @@ func HandleIdentityMessage(client *Client, message Message, payload IdentityMess
 		"broadcaster", client.broadcaster,
 		"subscriber", client.subscriber,
 	)
+
+	return nil
 }
 
 func HandleMessage(client *Client) (Message, error) {
@@ -274,9 +291,7 @@ func HandleMessage(client *Client) (Message, error) {
 	err := client.connection.ReadJSON(&message)
 
 	if err != nil {
-		zap.L().Error("Error occurred while reading incoming JSON message", zap.Error(err))
-
-		if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+		if websocket.IsCloseError(err, websocket.CloseAbnormalClosure, websocket.CloseGoingAway) {
 			zap.L().Warn("Unexpected websocket close, peer is disconnected, ignoring message...")
 		}
 
@@ -306,7 +321,11 @@ func HandleMessage(client *Client) (Message, error) {
 			return Message{}, err
 		}
 
-		HandleIdentityMessage(client, message, identityMessage)
+		err = HandleIdentityMessage(client, message, identityMessage)
+
+		if err != nil {
+			return Message{}, err
+		}
 
 	case EVENT_LOG_LINE:
 		if !client.active {

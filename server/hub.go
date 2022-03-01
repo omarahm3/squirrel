@@ -77,6 +77,16 @@ func (h *Hub) Run() {
 			zap.S().Infow("Unregistering client",
 				"id", client.id)
 
+			// In case broadcaster is disconnecting, then disconnect subscribers too
+			if client.IsActiveBroadcaster() {
+				for _, c := range h.clients {
+					if c.IsActiveSubscriber() && c.peerId == client.id {
+						removeClient(c.hub, c.id, true)
+						// c.connection.WriteMessage(websocket.CloseMessage, []byte{})
+						// c.connection.Close()
+					}
+				}
+			}
 			removeClient(client.hub, client.id, true)
 
 		case message := <-h.broadcast:
