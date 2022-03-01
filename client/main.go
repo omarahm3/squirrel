@@ -51,7 +51,7 @@ func Main() {
 	SendIdentity(connection, clientId)
 
 	if !options.Listen {
-    fmt.Printf("ID: [ %s ]", clientId)
+		fmt.Printf("ID: [ %s ]", clientId)
 		fmt.Printf("Link: [ %s/client/%s ]\n", options.Domain.Public, clientId)
 	}
 
