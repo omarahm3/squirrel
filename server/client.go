@@ -32,11 +32,20 @@ type Client struct {
 	active      bool
 }
 
+func (client *Client) IsActiveBroadcaster() bool {
+	return client.broadcaster && client.active
+}
+
+func (client *Client) IsActiveSubscriber() bool {
+	return client.subscriber && client.active && client.peerId != ""
+}
+
 func (client *Client) ReadPump() {
 	defer func() {
 		zap.S().Info("Removing client")
 		client.hub.unregister <- client
 		zap.S().Info("Closing client connection")
+		// client.connection.WriteMessage(websocket.CloseMessage, []byte{})
 		client.connection.Close()
 	}()
 
