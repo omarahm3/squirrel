@@ -1,9 +1,7 @@
 package server
 
 import (
-	"encoding/json"
-	"errors"
-	"fmt"
+	"io"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -16,10 +14,6 @@ const (
 	PING_PERIOD    = (PONG_WAIT * 9) / 10
 	EVENT_IDENTITY = "identity"
 	EVENT_LOG_LINE = "log_line"
-)
-
-var (
-	newLine = []byte{'\n'}
 )
 
 type Client struct {
@@ -39,6 +33,62 @@ func (client *Client) IsActiveBroadcaster() bool {
 
 func (client *Client) IsActiveSubscriber() bool {
 	return client.subscriber && client.active && client.peerId != ""
+}
+
+func (client *Client) ReadIncomingMessage() (Message, error) {
+	zap.S().Debugw(
+		"Handling client incoming messages",
+		"id", client.id,
+	)
+
+	var message Message
+
+	zap.S().Debugw(
+		"Reading message of client",
+		"client", client.id,
+		"broadcaster", client.broadcaster,
+		"subscriber", client.subscriber,
+	)
+
+	err := client.connection.ReadJSON(&message)
+
+	if err != nil {
+		if websocket.IsCloseError(err, websocket.CloseAbnormalClosure, websocket.CloseGoingAway) {
+			zap.L().Warn("Unexpected websocket close, peer is disconnected, ignoring message...")
+		}
+
+		return Message{}, err
+	}
+
+	return HandleMessage(client, message)
+}
+
+func (client *Client) writeMessage(message []byte) (io.WriteCloser, error) {
+	zap.S().Debug("Setting connection write deadline")
+	err := client.connection.SetWriteDeadline(time.Now().Add(WRITE_WAIT))
+
+	if err != nil {
+		zap.L().Error("Error setting write deadline", zap.Error(err))
+		return nil, err
+	}
+
+	writer, err := client.connection.NextWriter(websocket.TextMessage)
+
+	if err != nil {
+		zap.L().Error("Error defining websocket writer", zap.Error(err))
+		return nil, err
+	}
+
+	zap.S().Debugw("Writing message", "message", string(message))
+
+	_, err = writer.Write(message)
+
+	if err != nil {
+		zap.L().Error("Error writing the actual message", zap.Error(err))
+		return nil, err
+	}
+
+	return writer, nil
 }
 
 func (client *Client) ReadPump() {
@@ -67,7 +117,7 @@ func (client *Client) ReadPump() {
 	})
 
 	for {
-		message, err := HandleMessage(client)
+		message, err := client.ReadIncomingMessage()
 
 		if err != nil {
 			zap.L().Error("Error handling message, disconnecting peer", zap.Error(err), zap.String("peerId", client.id))
@@ -93,6 +143,56 @@ func (client *Client) ReadPump() {
 	}
 }
 
+func writeQueuedMessages(client *Client, writer io.WriteCloser) error {
+	zap.S().Info("Sending queued messages")
+
+	// Handle queued messages
+	for i := 0; i < len(client.send); i++ {
+		_, err := writer.Write([]byte{'\n'})
+
+		if err != nil {
+			zap.L().Error("Error writing newline", zap.Error(err))
+			return err
+		}
+
+		message, ok := <-client.send
+
+		if !ok {
+			zap.S().Info("Sending queued message was not OK, closing connection..")
+			client.connection.WriteMessage(websocket.CloseMessage, []byte{})
+			return err
+		}
+
+		zap.S().Debugw("Writing message", "message", string(message))
+		_, err = writer.Write(message)
+
+		if err != nil {
+			zap.L().Error("Error writing message", zap.Error(err))
+			return err
+		}
+	}
+
+	return nil
+}
+
+func sendPingMessage(client *Client) error {
+	zap.S().Info("Sending Ping Message")
+
+	err := client.connection.SetWriteDeadline(time.Now().Add(WRITE_WAIT))
+
+	if err != nil {
+		zap.L().Error("Error setting write deadline", zap.Error(err))
+		return err
+	}
+
+	if err := client.connection.WriteMessage(websocket.PingMessage, nil); err != nil {
+		zap.L().Error("Error sending ping message", zap.Error(err))
+		return err
+	}
+
+	return nil
+}
+
 func (client *Client) WritePump() {
 	ticker := time.NewTicker(PING_PERIOD)
 
@@ -106,64 +206,22 @@ func (client *Client) WritePump() {
 	for {
 		select {
 		case message, ok := <-client.send:
-			zap.S().Debug("Setting connection write deadline")
-			err := client.connection.SetWriteDeadline(time.Now().Add(WRITE_WAIT))
-
-			if err != nil {
-				zap.L().Error("Error setting write deadline", zap.Error(err))
-				return
-			}
-
 			if !ok {
 				zap.S().Info("Sending message was not OK, closing connection..")
 				client.connection.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
 
-			zap.S().Debug("Defining next writer")
-
-			writer, err := client.connection.NextWriter(websocket.TextMessage)
+			writer, err := client.writeMessage(message)
 
 			if err != nil {
-				zap.L().Error("Error defining websocket writer", zap.Error(err))
 				return
 			}
 
-			zap.S().Debugw("Writing message", "message", string(message))
-
-			_, err = writer.Write(message)
+			err = writeQueuedMessages(client, writer)
 
 			if err != nil {
-				zap.L().Error("Error writing the actual message", zap.Error(err))
 				return
-			}
-
-			zap.S().Info("Sending queued messages")
-
-			// Handle queued messages
-			for i := 0; i < len(client.send); i++ {
-				_, err = writer.Write(newLine)
-
-				if err != nil {
-					zap.L().Error("Error writing newline", zap.Error(err))
-					return
-				}
-
-				message, ok := <-client.send
-
-				if !ok {
-					zap.S().Info("Sending queued message was not OK, closing connection..")
-					client.connection.WriteMessage(websocket.CloseMessage, []byte{})
-					return
-				}
-
-				zap.S().Debugw("Writing message", "message", string(message))
-				_, err = writer.Write(message)
-
-				if err != nil {
-					zap.L().Error("Error writing message", zap.Error(err))
-					return
-				}
 			}
 
 			if err := writer.Close(); err != nil {
@@ -171,192 +229,11 @@ func (client *Client) WritePump() {
 				return
 			}
 		case <-ticker.C:
-			zap.S().Info("Sending Ping Message")
-
-			err := client.connection.SetWriteDeadline(time.Now().Add(WRITE_WAIT))
+			err := sendPingMessage(client)
 
 			if err != nil {
-				zap.L().Error("Error setting write deadline", zap.Error(err))
-				return
-			}
-
-			if err := client.connection.WriteMessage(websocket.PingMessage, nil); err != nil {
-				zap.L().Error("Error sending ping message", zap.Error(err))
 				return
 			}
 		}
 	}
-}
-
-func HandleNewLogLine(client *Client, message LogMessage) {
-	zap.S().Debugw(
-		"Sending new log line message",
-		"message", string(message.Line),
-		"clientId", client.id,
-	)
-
-	client.hub.broadcast <- struct {
-		message  []byte
-		clientId string
-	}{
-		message:  []byte(message.Line),
-		clientId: client.id,
-	}
-}
-
-func HandleIdentityMessage(client *Client, message Message, payload IdentityMessage) error {
-	zap.S().Debugw(
-		"Handling identity message",
-		"event", string(message.Event),
-		"clientId", client.id,
-		"broadcaster", payload.Broadcaster,
-		"subscriber", payload.Subscriber,
-	)
-
-	var updateId string
-
-	// In case this is a broadcaster peer
-	if payload.Broadcaster {
-		zap.S().Debugw(
-			"Preparing broadcaster client",
-			"updateId", client.id,
-			"broadcaster", payload.Broadcaster,
-			"subscriber", payload.Subscriber,
-		)
-
-		updateId = client.id
-		client.id = message.Id
-		client.broadcaster = payload.Broadcaster
-		client.peerId = ""
-	} else {
-		zap.S().Debugw(
-			"Preparing remote client",
-			"updateId", client.id,
-			"broadcaster", payload.Broadcaster,
-			"subscriber", payload.Subscriber,
-		)
-
-		if payload.PeerId == "" {
-			zap.S().Warn("Remote client identity was sent with empty peerId, discarding...")
-			return nil
-		}
-
-		updateId = client.id
-		client.peerId = payload.PeerId
-		client.subscriber = payload.Subscriber
-	}
-
-	zap.S().Debug("Setting client as active")
-
-	client.active = true
-
-	client.hub.update <- struct {
-		id     string
-		client *Client
-	}{updateId, client}
-
-	if client.IsActiveSubscriber() {
-		if _, ok := client.hub.clients[client.peerId]; !ok {
-			return fmt.Errorf("Client ID: [%s] doesn't exist on the hub", client.peerId)
-		}
-	}
-
-	zap.S().Debugw(
-		"Update request was sent",
-		"id", client.id,
-		"peerId", client.peerId,
-		"active", client.active,
-		"broadcaster", client.broadcaster,
-		"subscriber", client.subscriber,
-	)
-
-	return nil
-}
-
-func HandleMessage(client *Client) (Message, error) {
-	zap.S().Debugw(
-		"Handling client incoming messages",
-		"id", client.id,
-	)
-
-	var message Message
-
-	zap.S().Debugw(
-		"Reading message of client",
-		"client", client.id,
-		"broadcaster", client.broadcaster,
-		"subscriber", client.subscriber,
-	)
-
-	err := client.connection.ReadJSON(&message)
-
-	if err != nil {
-		if websocket.IsCloseError(err, websocket.CloseAbnormalClosure, websocket.CloseGoingAway) {
-			zap.L().Warn("Unexpected websocket close, peer is disconnected, ignoring message...")
-		}
-
-		return Message{}, err
-	}
-
-	switch message.Event {
-	case EVENT_IDENTITY:
-		zap.S().Debug("Incoming identity event")
-		identityMessage := IdentityMessage{}
-		data, err := json.Marshal(message.Payload)
-
-		if err != nil {
-			zap.L().Error("Unexpected error while marshaling payload", zap.Error(err))
-			return Message{}, err
-		}
-
-		zap.S().Debugw(
-			"Payload was marshaled",
-			"payload", string(data),
-		)
-
-		err = json.Unmarshal([]byte(data), &identityMessage)
-
-		if err != nil {
-			zap.L().Error("Unexpected error while unmarshaling payload", zap.Error(err))
-			return Message{}, err
-		}
-
-		err = HandleIdentityMessage(client, message, identityMessage)
-
-		if err != nil {
-			return Message{}, err
-		}
-
-	case EVENT_LOG_LINE:
-		if !client.active {
-			zap.L().Warn("Client is not active yet, ignoring message")
-			return Message{}, errors.New("Client is not active yet, ignoring messages")
-		}
-
-		zap.S().Debug("Incoming log_line event, preparing log message")
-
-		logMessage := LogMessage{}
-		data, err := json.Marshal(message.Payload)
-
-		if err != nil {
-			zap.L().Error("Unexpected error while marshaling payload", zap.Error(err))
-			return Message{}, err
-		}
-
-		zap.S().Debugw(
-			"Payload was marshaled",
-			"payload", string(data),
-		)
-
-		err = json.Unmarshal([]byte(data), &logMessage)
-
-		if err != nil {
-			zap.L().Error("Unexpected error while unmarshaling payload", zap.Error(err))
-			return Message{}, err
-		}
-
-		HandleNewLogLine(client, logMessage)
-	}
-
-	return message, nil
 }

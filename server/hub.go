@@ -37,7 +37,7 @@ func NewHub() *Hub {
 
 // removeChannel is a flag must be set to true to remove client send channel
 // This flag is added to avoid removing client channel when updating the client
-func removeClient(hub *Hub, clientId string, removeChannel bool) {
+func (h *Hub) RemoveClient(clientId string, removeChannel bool) {
 	if client, ok := hub.clients[clientId]; ok {
 		zap.S().Infow("Removing client",
 			"clientId", clientId,
@@ -46,6 +46,14 @@ func removeClient(hub *Hub, clientId string, removeChannel bool) {
 		delete(hub.clients, clientId)
 		if removeChannel {
 			close(client.send)
+		}
+	}
+}
+
+func (h *Hub) RemoveActiveSubscribers(clientId string) {
+	for _, c := range h.clients {
+		if c.IsActiveSubscriber() && c.peerId == clientId {
+			h.RemoveClient(c.id, true)
 		}
 	}
 }
@@ -70,7 +78,7 @@ func (h *Hub) Run() {
 				"id", info.id,
 				"newId", info.client.id)
 
-			removeClient(h, info.id, false)
+			h.RemoveClient(info.id, false)
 			h.clients[info.client.id] = info.client
 
 		case client := <-h.unregister:
@@ -79,43 +87,23 @@ func (h *Hub) Run() {
 
 			// In case broadcaster is disconnecting, then disconnect subscribers too
 			if client.IsActiveBroadcaster() {
-				for _, c := range h.clients {
-					if c.IsActiveSubscriber() && c.peerId == client.id {
-						removeClient(c.hub, c.id, true)
-						// c.connection.WriteMessage(websocket.CloseMessage, []byte{})
-						// c.connection.Close()
-					}
-				}
+				h.RemoveActiveSubscribers(client.id)
 			}
-			removeClient(client.hub, client.id, true)
+			h.RemoveClient(client.id, true)
 
 		case message := <-h.broadcast:
 			zap.S().Infow("Broadcasting message to peer",
 				"clientId", message.clientId)
 
 			for _, client := range h.clients {
-				// Ignore any client and only accept client that has the link
-				if client.broadcaster || !client.subscriber || !client.active || client.peerId != message.clientId {
-					zap.S().Debugw("Ignoring broadcasting message to this client",
+				if client.IsActiveSubscriber() && client.peerId == message.clientId {
+					zap.S().Debugw("Sending message to client",
 						"clientId", client.id,
 						"broadcaster", client.broadcaster,
 						"subscriber", client.subscriber,
 						"active", client.active)
 
-					continue
-				}
-
-				zap.S().Debugw("Sending message to client",
-					"clientId", client.id,
-					"broadcaster", client.broadcaster,
-					"subscriber", client.subscriber,
-					"active", client.active)
-
-				select {
-				case client.send <- message.message:
-				default:
-					delete(h.clients, client.id)
-					close(client.send)
+					client.send <- message.message
 				}
 			}
 		}
