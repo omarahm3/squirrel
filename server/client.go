@@ -34,6 +34,34 @@ func (client *Client) IsActiveSubscriber() bool {
 	return client.subscriber && client.active && client.peerId != ""
 }
 
+func (client *Client) ReadIncomingMessage() (Message, error) {
+	zap.S().Debugw(
+		"Handling client incoming messages",
+		"id", client.id,
+	)
+
+	var message Message
+
+	zap.S().Debugw(
+		"Reading message of client",
+		"client", client.id,
+		"broadcaster", client.broadcaster,
+		"subscriber", client.subscriber,
+	)
+
+	err := client.connection.ReadJSON(&message)
+
+	if err != nil {
+		if websocket.IsCloseError(err, websocket.CloseAbnormalClosure, websocket.CloseGoingAway) {
+			zap.L().Warn("Unexpected websocket close, peer is disconnected, ignoring message...")
+		}
+
+		return Message{}, err
+	}
+
+	return HandleMessage(client, message)
+}
+
 func (client *Client) ReadPump() {
 	defer func() {
 		zap.S().Info("Removing client")
@@ -60,7 +88,7 @@ func (client *Client) ReadPump() {
 	})
 
 	for {
-		message, err := ReadIncomingMessage(client)
+		message, err := client.ReadIncomingMessage()
 
 		if err != nil {
 			zap.L().Error("Error handling message, disconnecting peer", zap.Error(err), zap.String("peerId", client.id))
@@ -179,32 +207,4 @@ func (client *Client) WritePump() {
 			}
 		}
 	}
-}
-
-func ReadIncomingMessage(client *Client) (Message, error) {
-	zap.S().Debugw(
-		"Handling client incoming messages",
-		"id", client.id,
-	)
-
-	var message Message
-
-	zap.S().Debugw(
-		"Reading message of client",
-		"client", client.id,
-		"broadcaster", client.broadcaster,
-		"subscriber", client.subscriber,
-	)
-
-	err := client.connection.ReadJSON(&message)
-
-	if err != nil {
-		if websocket.IsCloseError(err, websocket.CloseAbnormalClosure, websocket.CloseGoingAway) {
-			zap.L().Warn("Unexpected websocket close, peer is disconnected, ignoring message...")
-		}
-
-		return Message{}, err
-	}
-
-	return HandleMessage(client, message)
 }
