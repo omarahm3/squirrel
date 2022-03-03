@@ -15,10 +15,6 @@ const (
 	EVENT_LOG_LINE = "log_line"
 )
 
-var (
-	newLine = []byte{'\n'}
-)
-
 type Client struct {
 	id          string
 	broadcaster bool
@@ -139,7 +135,7 @@ func (client *Client) WritePump() {
 
 			// Handle queued messages
 			for i := 0; i < len(client.send); i++ {
-				_, err = writer.Write(newLine)
+				_, err = writer.Write([]byte{'\n'})
 
 				if err != nil {
 					zap.L().Error("Error writing newline", zap.Error(err))
