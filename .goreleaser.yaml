@@ -50,6 +50,15 @@ archives:
       windows: Windows
       386: i386
       amd64: x86_64
+nfpms:
+  - maintainer: omarahm3 <me@mrg.sh>
+    description: Realtime logs sharing by just piping squirrel
+    homepage: https://github.com/omarahm3/squirrel
+    license: MIT
+    formats:
+      - deb
+      - rpm
+      - apk
 checksum:
   name_template: 'checksums.txt'
 snapshot:
