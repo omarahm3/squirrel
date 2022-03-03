@@ -1,6 +1,7 @@
 package server
 
 import (
+	"io"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -62,6 +63,34 @@ func (client *Client) ReadIncomingMessage() (Message, error) {
 	return HandleMessage(client, message)
 }
 
+func (client *Client) writeMessage(message []byte) (io.WriteCloser, error) {
+	zap.S().Debug("Setting connection write deadline")
+	err := client.connection.SetWriteDeadline(time.Now().Add(WRITE_WAIT))
+
+	if err != nil {
+		zap.L().Error("Error setting write deadline", zap.Error(err))
+		return nil, err
+	}
+
+	writer, err := client.connection.NextWriter(websocket.TextMessage)
+
+	if err != nil {
+		zap.L().Error("Error defining websocket writer", zap.Error(err))
+		return nil, err
+	}
+
+	zap.S().Debugw("Writing message", "message", string(message))
+
+	_, err = writer.Write(message)
+
+	if err != nil {
+		zap.L().Error("Error writing the actual message", zap.Error(err))
+		return nil, err
+	}
+
+	return writer, nil
+}
+
 func (client *Client) ReadPump() {
 	defer func() {
 		zap.S().Info("Removing client")
@@ -114,6 +143,56 @@ func (client *Client) ReadPump() {
 	}
 }
 
+func writeQueuedMessages(client *Client, writer io.WriteCloser) error {
+	zap.S().Info("Sending queued messages")
+
+	// Handle queued messages
+	for i := 0; i < len(client.send); i++ {
+		_, err := writer.Write([]byte{'\n'})
+
+		if err != nil {
+			zap.L().Error("Error writing newline", zap.Error(err))
+			return err
+		}
+
+		message, ok := <-client.send
+
+		if !ok {
+			zap.S().Info("Sending queued message was not OK, closing connection..")
+			client.connection.WriteMessage(websocket.CloseMessage, []byte{})
+			return err
+		}
+
+		zap.S().Debugw("Writing message", "message", string(message))
+		_, err = writer.Write(message)
+
+		if err != nil {
+			zap.L().Error("Error writing message", zap.Error(err))
+			return err
+		}
+	}
+
+	return nil
+}
+
+func sendPingMessage(client *Client) error {
+	zap.S().Info("Sending Ping Message")
+
+	err := client.connection.SetWriteDeadline(time.Now().Add(WRITE_WAIT))
+
+	if err != nil {
+		zap.L().Error("Error setting write deadline", zap.Error(err))
+		return err
+	}
+
+	if err := client.connection.WriteMessage(websocket.PingMessage, nil); err != nil {
+		zap.L().Error("Error sending ping message", zap.Error(err))
+		return err
+	}
+
+	return nil
+}
+
 func (client *Client) WritePump() {
 	ticker := time.NewTicker(PING_PERIOD)
 
@@ -127,64 +206,22 @@ func (client *Client) WritePump() {
 	for {
 		select {
 		case message, ok := <-client.send:
-			zap.S().Debug("Setting connection write deadline")
-			err := client.connection.SetWriteDeadline(time.Now().Add(WRITE_WAIT))
-
-			if err != nil {
-				zap.L().Error("Error setting write deadline", zap.Error(err))
-				return
-			}
-
 			if !ok {
 				zap.S().Info("Sending message was not OK, closing connection..")
 				client.connection.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
 
-			zap.S().Debug("Defining next writer")
-
-			writer, err := client.connection.NextWriter(websocket.TextMessage)
+			writer, err := client.writeMessage(message)
 
 			if err != nil {
-				zap.L().Error("Error defining websocket writer", zap.Error(err))
 				return
 			}
 
-			zap.S().Debugw("Writing message", "message", string(message))
-
-			_, err = writer.Write(message)
+			err = writeQueuedMessages(client, writer)
 
 			if err != nil {
-				zap.L().Error("Error writing the actual message", zap.Error(err))
 				return
-			}
-
-			zap.S().Info("Sending queued messages")
-
-			// Handle queued messages
-			for i := 0; i < len(client.send); i++ {
-				_, err = writer.Write([]byte{'\n'})
-
-				if err != nil {
-					zap.L().Error("Error writing newline", zap.Error(err))
-					return
-				}
-
-				message, ok := <-client.send
-
-				if !ok {
-					zap.S().Info("Sending queued message was not OK, closing connection..")
-					client.connection.WriteMessage(websocket.CloseMessage, []byte{})
-					return
-				}
-
-				zap.S().Debugw("Writing message", "message", string(message))
-				_, err = writer.Write(message)
-
-				if err != nil {
-					zap.L().Error("Error writing message", zap.Error(err))
-					return
-				}
 			}
 
 			if err := writer.Close(); err != nil {
@@ -192,17 +229,9 @@ func (client *Client) WritePump() {
 				return
 			}
 		case <-ticker.C:
-			zap.S().Info("Sending Ping Message")
-
-			err := client.connection.SetWriteDeadline(time.Now().Add(WRITE_WAIT))
+			err := sendPingMessage(client)
 
 			if err != nil {
-				zap.L().Error("Error setting write deadline", zap.Error(err))
-				return
-			}
-
-			if err := client.connection.WriteMessage(websocket.PingMessage, nil); err != nil {
-				zap.L().Error("Error sending ping message", zap.Error(err))
 				return
 			}
 		}
