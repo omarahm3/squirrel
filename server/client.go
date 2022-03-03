@@ -1,9 +1,6 @@
 package server
 
 import (
-	"encoding/json"
-	"errors"
-	"fmt"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -67,7 +64,7 @@ func (client *Client) ReadPump() {
 	})
 
 	for {
-		message, err := HandleMessage(client)
+		message, err := ReadIncomingMessage(client)
 
 		if err != nil {
 			zap.L().Error("Error handling message, disconnecting peer", zap.Error(err), zap.String("peerId", client.id))
@@ -188,92 +185,7 @@ func (client *Client) WritePump() {
 	}
 }
 
-func HandleNewLogLine(client *Client, message LogMessage) {
-	zap.S().Debugw(
-		"Sending new log line message",
-		"message", string(message.Line),
-		"clientId", client.id,
-	)
-
-	client.hub.broadcast <- struct {
-		message  []byte
-		clientId string
-	}{
-		message:  []byte(message.Line),
-		clientId: client.id,
-	}
-}
-
-func HandleIdentityMessage(client *Client, message Message, payload IdentityMessage) error {
-	zap.S().Debugw(
-		"Handling identity message",
-		"event", string(message.Event),
-		"clientId", client.id,
-		"broadcaster", payload.Broadcaster,
-		"subscriber", payload.Subscriber,
-	)
-
-	var updateId string
-
-	// In case this is a broadcaster peer
-	if payload.Broadcaster {
-		zap.S().Debugw(
-			"Preparing broadcaster client",
-			"updateId", client.id,
-			"broadcaster", payload.Broadcaster,
-			"subscriber", payload.Subscriber,
-		)
-
-		updateId = client.id
-		client.id = message.Id
-		client.broadcaster = payload.Broadcaster
-		client.peerId = ""
-	} else {
-		zap.S().Debugw(
-			"Preparing remote client",
-			"updateId", client.id,
-			"broadcaster", payload.Broadcaster,
-			"subscriber", payload.Subscriber,
-		)
-
-		if payload.PeerId == "" {
-			zap.S().Warn("Remote client identity was sent with empty peerId, discarding...")
-			return nil
-		}
-
-		updateId = client.id
-		client.peerId = payload.PeerId
-		client.subscriber = payload.Subscriber
-	}
-
-	zap.S().Debug("Setting client as active")
-
-	client.active = true
-
-	client.hub.update <- struct {
-		id     string
-		client *Client
-	}{updateId, client}
-
-	if client.IsActiveSubscriber() {
-		if _, ok := client.hub.clients[client.peerId]; !ok {
-			return fmt.Errorf("Client ID: [%s] doesn't exist on the hub", client.peerId)
-		}
-	}
-
-	zap.S().Debugw(
-		"Update request was sent",
-		"id", client.id,
-		"peerId", client.peerId,
-		"active", client.active,
-		"broadcaster", client.broadcaster,
-		"subscriber", client.subscriber,
-	)
-
-	return nil
-}
-
-func HandleMessage(client *Client) (Message, error) {
+func ReadIncomingMessage(client *Client) (Message, error) {
 	zap.S().Debugw(
 		"Handling client incoming messages",
 		"id", client.id,
@@ -298,65 +210,5 @@ func HandleMessage(client *Client) (Message, error) {
 		return Message{}, err
 	}
 
-	switch message.Event {
-	case EVENT_IDENTITY:
-		zap.S().Debug("Incoming identity event")
-		identityMessage := IdentityMessage{}
-		data, err := json.Marshal(message.Payload)
-
-		if err != nil {
-			zap.L().Error("Unexpected error while marshaling payload", zap.Error(err))
-			return Message{}, err
-		}
-
-		zap.S().Debugw(
-			"Payload was marshaled",
-			"payload", string(data),
-		)
-
-		err = json.Unmarshal([]byte(data), &identityMessage)
-
-		if err != nil {
-			zap.L().Error("Unexpected error while unmarshaling payload", zap.Error(err))
-			return Message{}, err
-		}
-
-		err = HandleIdentityMessage(client, message, identityMessage)
-
-		if err != nil {
-			return Message{}, err
-		}
-
-	case EVENT_LOG_LINE:
-		if !client.active {
-			zap.L().Warn("Client is not active yet, ignoring message")
-			return Message{}, errors.New("Client is not active yet, ignoring messages")
-		}
-
-		zap.S().Debug("Incoming log_line event, preparing log message")
-
-		logMessage := LogMessage{}
-		data, err := json.Marshal(message.Payload)
-
-		if err != nil {
-			zap.L().Error("Unexpected error while marshaling payload", zap.Error(err))
-			return Message{}, err
-		}
-
-		zap.S().Debugw(
-			"Payload was marshaled",
-			"payload", string(data),
-		)
-
-		err = json.Unmarshal([]byte(data), &logMessage)
-
-		if err != nil {
-			zap.L().Error("Unexpected error while unmarshaling payload", zap.Error(err))
-			return Message{}, err
-		}
-
-		HandleNewLogLine(client, logMessage)
-	}
-
-	return message, nil
+	return HandleMessage(client, message)
 }
