@@ -134,6 +134,11 @@ func ScanFile(input chan string) {
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		text := scanner.Text()
+
+		if options.Output {
+			fmt.Println(text)
+		}
+
 		input <- text
 	}
 

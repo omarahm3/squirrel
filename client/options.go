@@ -15,6 +15,7 @@ type ClientOptions struct {
 	LogLevel zapcore.Level
 	PeerId   string
 	Listen   bool
+	Output   bool
 }
 
 const (
@@ -29,6 +30,7 @@ var (
 	loglevel string
 	peer     string
 	listen   bool
+	output   bool
 )
 
 func fprintf(format string, a ...interface{}) {
@@ -48,6 +50,9 @@ func InitOptions() *ClientOptions {
 	flag.StringVar(&loglevel, "log", utils.WinningDefault(utils.GetEnvVariable("LOG_LEVEL"), loglevel, DEFAULT_LOG_LEVEL), "Log level")
 	flag.StringVar(&peer, "peer", "", "Peer client ID")
 	flag.BoolVar(&listen, "listen", false, "Initiate in listen mode to listen to peer")
+	flag.BoolVar(&listen, "l", false, "Initiate in listen mode to listen to peer")
+	flag.BoolVar(&output, "show-output", false, "Print output stream to stdout")
+	flag.BoolVar(&output, "o", false, "Print output stream to stdout")
 	flag.Parse()
 
 	return &ClientOptions{
@@ -56,5 +61,6 @@ func InitOptions() *ClientOptions {
 		LogLevel: utils.GetLogLevelFromString(loglevel),
 		PeerId:   peer,
 		Listen:   listen,
+		Output:   output,
 	}
 }
