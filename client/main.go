@@ -22,8 +22,25 @@ var options *ClientOptions
 var clientId string
 var controller = make(chan int)
 
+func isStdin() bool {
+  stat, err := os.Stdin.Stat()
+
+  if err != nil {
+    fmt.Println("Couldn't check STDIN: ", err)
+    os.Exit(1)
+  }
+
+  return (stat.Mode() & os.ModeCharDevice) == 0
+}
+
 func Main() {
 	options = InitOptions()
+
+  if !options.Listen && !isStdin() {
+    fmt.Println("Nothing is being read, you should pipe something to stdin of this command")
+    return
+  }
+
 	interrupt = make(chan os.Signal) // Channel to listen for interrupt signal to gracefully terminate
 	input := make(chan string)
 
@@ -134,6 +151,11 @@ func ScanFile(input chan string) {
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		text := scanner.Text()
+
+		if options.Output {
+			fmt.Println(text)
+		}
+
 		input <- text
 	}
 
