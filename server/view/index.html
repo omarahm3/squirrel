@@ -6,7 +6,7 @@
       background-image: initial;
       background-color: black;
       color: #bdb7af;
-      font-family: Lucida Console,Lucida Sans Typewriter,monaco,Bitstream Vera Sans Mono,monospace;
+      font-family: Lucida Console, Lucida Sans Typewriter, monaco, Bitstream Vera Sans Mono, monospace;
       margin: 0;
       padding: 1em;
     }
@@ -16,6 +16,12 @@
       top: 0;
       width: 100%;
       background-color: black;
+      padding: 1rem 0;
+    }
+
+    .realsmall {
+      font-size: 60%;
+      padding-left: 0.5rem;
     }
 
     .txt {
@@ -30,15 +36,33 @@
       color: green;
     }
 
+    .title {
+      margin: 0;
+      padding: 0;
+    }
+
     .disconnected {
       color: red;
+    }
+
+    .subbox {
+      padding-top: 2px;
+      display: flex;
+      align-items: center;
+      padding-top: 0.5rem;
     }
   </style>
 </head>
 
 <body>
   <div class="sticky">
-    <h4>Peer ID: [ {{ .clientId }} ] <small id="status"></small></h4>
+    <h4 class="title">Peer ID: [ {{ .clientId }} ] <small id="status"></small></h4>
+    <div class="subbox">
+      <a class="github-button" href="https://github.com/omarahm3/squirrel"
+        data-color-scheme="no-preference: dark_high_contrast; light: dark_high_contrast; dark: dark_high_contrast;"
+        data-icon="octicon-star" aria-label="Star omarahm3/squirrel on GitHub">Star</a>
+      <small class="realsmall">Made with ❤️ by <a href="https://github.com/omarahm3">@omarahm3</a></small>
+    </div>
   </div>
 
   <pre id="output" class="txt"></pre>
@@ -83,6 +107,7 @@
       disconnectedSocket()
     }
   </script>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
 </body>
 
 </html>
