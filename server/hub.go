@@ -6,14 +6,18 @@ import (
 
 // Maintain the set of active clients
 type Hub struct {
-	clients   map[string]*Client
-	broadcast chan struct {
+	clients    map[string]*Client
+	register   chan *Client
+	unregister chan *Client
+	broadcast  chan struct {
 		message  []byte
 		clientId string
 	}
-	register   chan *Client
-	unregister chan *Client
-	update     chan struct {
+	send chan struct {
+		message  []byte
+		clientId string
+	}
+	update chan struct {
 		id     string
 		client *Client
 	}
@@ -25,6 +29,10 @@ func NewHub() *Hub {
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
 		broadcast: make(chan struct {
+			message  []byte
+			clientId string
+		}),
+		send: make(chan struct {
 			message  []byte
 			clientId string
 		}),
@@ -106,6 +114,18 @@ func (h *Hub) Run() {
 					client.send <- message.message
 				}
 			}
+
+		case message := <-h.send:
+			zap.S().Infow("Sending message to peer",
+				"clientId", message.clientId)
+
+			client, ok := h.clients[message.clientId]
+
+			if ok {
+				client.send <- message.message
+			}
+
+			zap.L().Error("Couldn't find client", zap.String("clientId", message.clientId))
 		}
 	}
 }
