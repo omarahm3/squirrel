@@ -18,10 +18,19 @@ type ControllerMessage struct {
 	Connection *websocket.Conn
 }
 
-var interrupt chan os.Signal
-var options *ClientOptions
-var clientId string
-var controller = make(chan int)
+var (
+	interrupt  chan os.Signal
+	options    *ClientOptions
+	clientId   string
+	controller = make(chan int)
+	events     = make(chan string)
+	input      = make(chan string)
+)
+
+const (
+	EVENT_IDENTITY       = "identity"
+	EVENT_SUBSCRIBER_ACK = "subscriber_ack"
+)
 
 func isStdin() bool {
 	stat, err := os.Stdin.Stat()
@@ -43,7 +52,6 @@ func Main() {
 	}
 
 	interrupt = make(chan os.Signal) // Channel to listen for interrupt signal to gracefully terminate
-	input := make(chan string)
 
 	utils.InitLogging(utils.LoggerOptions{
 		Env:         options.Env,
@@ -85,8 +93,8 @@ func Main() {
 		}
 	}
 
-	go ScanFile(input)
-	go HandleSendEvents(input, connection)
+	go HandleEvents()
+	go HandleSendEvents(connection)
 	go HandleIncomingMessages(connection)
 
 	// Main CLI loop
@@ -101,7 +109,7 @@ func Main() {
 	}
 }
 
-func HandleSendEvents(input chan string, connection *websocket.Conn) {
+func HandleSendEvents(connection *websocket.Conn) {
 	defer func() {
 		connection.Close()
 		zap.S().Info("Client connection closed")
@@ -138,7 +146,7 @@ func SendIdentity(connection *websocket.Conn, clientId string) {
 
 	message := Message{
 		Id:    clientId,
-		Event: "identity",
+		Event: EVENT_IDENTITY,
 		Payload: IdentityMessage{
 			PeerId:      peerId,
 			Broadcaster: broadcaster,
@@ -158,7 +166,19 @@ func SendIdentity(connection *websocket.Conn, clientId string) {
 	}
 }
 
-func ScanFile(input chan string) {
+func HandleEvents() {
+	for {
+		event := <-events
+
+		switch event {
+		case EVENT_SUBSCRIBER_ACK:
+      fmt.Println("Subscriber is connected, reading stdout")
+			go ScanFile()
+		}
+	}
+}
+
+func ScanFile() {
 	zap.S().Debug("Scanning log file")
 
 	scanner := bufio.NewScanner(os.Stdin)
