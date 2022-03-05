@@ -117,6 +117,28 @@ func isJSON(s string) bool {
 	return json.Unmarshal([]byte(s), &js) == nil
 }
 
+func handleIncomingJSONMessages(message []byte) error {
+	jsonMessage, err := NewMessage(message)
+
+	if err != nil {
+		return err
+	}
+
+	if jsonMessage.Event == EVENT_SUBSCRIBER_ACK {
+		m, err := jsonMessage.ToSubscriberConnectedMessage()
+
+		if err != nil {
+			return err
+		}
+
+		if m.Connected {
+      events <- EVENT_SUBSCRIBER_ACK
+		}
+	}
+
+	return nil
+}
+
 // Needed to receive server events
 // Right now we do nothing, but its here to avoid errors on the protocol
 func HandleIncomingMessages(connection *websocket.Conn) {
@@ -129,23 +151,11 @@ func HandleIncomingMessages(connection *websocket.Conn) {
 		_, message, err := connection.ReadMessage()
 
 		if isJSON(string(message)) {
-			jsonMessage, err := NewMessage(message)
+      err := handleIncomingJSONMessages(message)
 
-			if err != nil {
-				break
-			}
-
-			if jsonMessage.Event == "subscriber_ack" {
-				m, err := jsonMessage.ToSubscriberConnectedMessage()
-
-				if err != nil {
-					break
-				}
-
-				if m.Connected {
-					fmt.Println("Subscriber is connected")
-				}
-			}
+      if err != nil {
+        break
+      }
 		}
 
 		if options.Listen && options.PeerId != "" {
