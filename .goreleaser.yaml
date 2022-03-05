@@ -51,10 +51,26 @@ archives:
       386: i386
       amd64: x86_64
 nfpms:
-  - maintainer: omarahm3 <me@mrg.sh>
-    description: Realtime logs sharing by just piping squirrel
+  - id: squirrel
+    maintainer: omarahm3 <me@mrg.sh>
+    description: Realtime logs sharing by piping squirrel to stdout
     homepage: https://github.com/omarahm3/squirrel
     license: MIT
+    package_name: squirrel
+    builds:
+      - squirrel
+    formats:
+      - deb
+      - rpm
+      - apk
+  - id: squirreld
+    maintainer: omarahm3 <me@mrg.sh>
+    description: Squirreld is squirrel server meant to handle sharing logs between broadcaster and subscriber
+    homepage: https://github.com/omarahm3/squirrel
+    license: MIT
+    package_name: squirreld
+    builds:
+      - squirreld
     formats:
       - deb
       - rpm
