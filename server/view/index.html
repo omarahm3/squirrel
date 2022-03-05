@@ -1,34 +1,74 @@
 <html>
 
 <head>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+  <style>
+    body {
+      background-image: initial;
+      background-color: black;
+      color: #bdb7af;
+      font-family: Lucida Console,Lucida Sans Typewriter,monaco,Bitstream Vera Sans Mono,monospace;
+      margin: 0;
+      padding: 1em;
+    }
+
+    .sticky {
+      position: sticky;
+      top: 0;
+      width: 100%;
+      background-color: black;
+    }
+
+    .txt {
+      padding-top: 1rem;
+      font-size: 85%;
+      white-space: pre-line;
+      overflow-x: hidden;
+      margin: 0;
+    }
+
+    .connected {
+      color: green;
+    }
+
+    .disconnected {
+      color: red;
+    }
+  </style>
 </head>
 
 <body>
-  <h3>Websocket Test</h3>
+  <div class="sticky">
+    <h4>Peer ID: [ {{ .clientId }} ] <small id="status"></small></h4>
+  </div>
 
-  <h2>Client: {{ .clientId }} logs</h2>
-
-  <pre id="output"></pre>
+  <pre id="output" class="txt"></pre>
 
   <script>
     const URL = '{{ .domain }}/ws'
     const socket = new WebSocket(URL)
+    const status = document.getElementById('status')
+    const output = document.getElementById('output')
+
+    const disconnectedSocket = () => {
+      status.classList = 'disconnected'
+      status.innerHTML = '(disconnected)'
+    }
+
+    const connectedSocket = () => {
+      status.classList = 'connected'
+      status.innerHTML = '(connected)'
+    }
 
     const send = function (data) {
       socket.send(data)
     }
 
     socket.onmessage = function (message) {
-      console.log('Incoming Message', message)
-      $('#output').append(message.data + "\n")
+      output.append(message.data + "\n")
     }
 
     socket.onopen = () => {
-      setInterval(function () {
-        console.log('Sending Ping')
-        send("Ping")
-      }, 60 * 60 * 1000)
+      connectedSocket()
 
       send(JSON.stringify({
         event: 'identity',
@@ -37,6 +77,10 @@
           peerId: {{ .clientId}}
         }
       }))
+    }
+
+    socket.onclose = () => {
+      disconnectedSocket()
     }
   </script>
 </body>
