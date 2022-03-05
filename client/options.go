@@ -10,12 +10,13 @@ import (
 )
 
 type ClientOptions struct {
-	Env      string
-	Domain   *utils.Domain
-	LogLevel zapcore.Level
-	PeerId   string
-	Listen   bool
-	Output   bool
+	Env          string
+	Domain       *utils.Domain
+	LogLevel     zapcore.Level
+	PeerId       string
+	Listen       bool
+	Output       bool
+	UrlClipboard bool
 }
 
 const (
@@ -25,12 +26,13 @@ const (
 )
 
 var (
-	env      string
-	domain   string
-	loglevel string
-	peer     string
-	listen   bool
-	output   bool
+	env          string
+	domain       string
+	loglevel     string
+	peer         string
+	listen       bool
+	output       bool
+	urlClipboard bool
 )
 
 func fprintf(format string, a ...interface{}) {
@@ -53,14 +55,17 @@ func InitOptions() *ClientOptions {
 	flag.BoolVar(&listen, "l", false, "Initiate in listen mode to listen to peer")
 	flag.BoolVar(&output, "show-output", false, "Print output stream to stdout")
 	flag.BoolVar(&output, "o", false, "Print output stream to stdout")
+	flag.BoolVar(&urlClipboard, "copy-url", false, "Copy shareable link to clipboard")
+	flag.BoolVar(&urlClipboard, "u", false, "Copy shareable link to clipboard")
 	flag.Parse()
 
 	return &ClientOptions{
-		Env:      env,
-		Domain:   utils.BuildDomain(domain, env),
-		LogLevel: utils.GetLogLevelFromString(loglevel),
-		PeerId:   peer,
-		Listen:   listen,
-		Output:   output,
+		Env:          env,
+		Domain:       utils.BuildDomain(domain, env),
+		LogLevel:     utils.GetLogLevelFromString(loglevel),
+		PeerId:       peer,
+		Listen:       listen,
+		Output:       output,
+		UrlClipboard: urlClipboard,
 	}
 }

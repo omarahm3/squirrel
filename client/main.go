@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/atotto/clipboard"
 	"github.com/gorilla/websocket"
 	"github.com/omarahm3/squirrel/utils"
 	"go.uber.org/zap"
@@ -68,8 +69,20 @@ func Main() {
 	SendIdentity(connection, clientId)
 
 	if !options.Listen {
+		link := fmt.Sprintf("%s/client/%s", options.Domain.Public, clientId)
+
 		fmt.Printf("ID: [ %s ]\n", clientId)
-		fmt.Printf("Link: [ %s/client/%s ]\n", options.Domain.Public, clientId)
+		fmt.Printf("Link: [ %s ]\n", link)
+
+		if options.UrlClipboard {
+			err := clipboard.WriteAll(link)
+
+			if err != nil {
+				zap.S().Warnw("Error occurred while writing link to clipboard", "error", zap.Error(err))
+			} else {
+				fmt.Println("Url is copied to your clipboard")
+			}
+		}
 	}
 
 	go ScanFile(input)
