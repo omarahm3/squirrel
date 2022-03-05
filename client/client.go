@@ -104,6 +104,7 @@ func InitClient() *websocket.Conn {
 
 	if err != nil {
 		zap.S().Error("Error connecting to websocket server: ", err)
+		uiWriter.Stop()
 		os.Exit(1)
 	}
 
@@ -132,7 +133,7 @@ func handleIncomingJSONMessages(message []byte) error {
 		}
 
 		if m.Connected {
-      events <- EVENT_SUBSCRIBER_ACK
+			events <- EVENT_SUBSCRIBER_ACK
 		}
 	}
 
@@ -151,11 +152,11 @@ func HandleIncomingMessages(connection *websocket.Conn) {
 		_, message, err := connection.ReadMessage()
 
 		if isJSON(string(message)) {
-      err := handleIncomingJSONMessages(message)
+			err := handleIncomingJSONMessages(message)
 
-      if err != nil {
-        break
-      }
+			if err != nil {
+				break
+			}
 		}
 
 		if options.Listen && options.PeerId != "" {
