@@ -20,10 +20,66 @@ type IdentityMessage struct {
 	Subscriber  bool   `json:"subscriber"`
 }
 
+type SubscriberConnectedMessage struct {
+	Connected bool `json:"connected"`
+}
+
 type Message struct {
 	Id      string      `json:"id"`
 	Payload interface{} `json:"payload"`
 	Event   string      `json:"event"`
+}
+
+func (m Message) MarshalPayload() ([]byte, error) {
+	data, err := json.Marshal(m.Payload)
+
+	if err != nil {
+		zap.L().Error("Unexpected error while marshaling payload", zap.Error(err))
+		return []byte{}, err
+	}
+
+	zap.S().Debugw(
+		"Payload was marshaled",
+		"payload", string(data),
+	)
+
+	return data, nil
+}
+
+func (m Message) ToSubscriberConnectedMessage() (SubscriberConnectedMessage, error) {
+	data, err := m.MarshalPayload()
+
+	if err != nil {
+		zap.L().Error("Unexpected error while marshaling payload", zap.Error(err))
+		return SubscriberConnectedMessage{}, err
+	}
+
+	zap.S().Debugw(
+		"Payload was marshaled",
+		"payload", string(data),
+	)
+
+	message := SubscriberConnectedMessage{}
+	err = json.Unmarshal([]byte(data), &message)
+
+	if err != nil {
+		zap.L().Error("Unexpected error while unmarshaling payload", zap.Error(err))
+		return SubscriberConnectedMessage{}, err
+	}
+
+	return message, nil
+}
+
+func NewMessage(message []byte) (Message, error) {
+	var m Message
+
+	err := json.Unmarshal([]byte(message), &m)
+
+	if err != nil {
+		return Message{}, err
+	}
+
+	return m, nil
 }
 
 func (message Message) MarshalLogObject(encoder zapcore.ObjectEncoder) error {
@@ -56,6 +112,11 @@ func InitClient() *websocket.Conn {
 	return connection
 }
 
+func isJSON(s string) bool {
+	var js map[string]interface{}
+	return json.Unmarshal([]byte(s), &js) == nil
+}
+
 // Needed to receive server events
 // Right now we do nothing, but its here to avoid errors on the protocol
 func HandleIncomingMessages(connection *websocket.Conn) {
@@ -66,6 +127,26 @@ func HandleIncomingMessages(connection *websocket.Conn) {
 
 	for {
 		_, message, err := connection.ReadMessage()
+
+		if isJSON(string(message)) {
+			jsonMessage, err := NewMessage(message)
+
+			if err != nil {
+				break
+			}
+
+			if jsonMessage.Event == "subscriber_ack" {
+				m, err := jsonMessage.ToSubscriberConnectedMessage()
+
+				if err != nil {
+					break
+				}
+
+				if m.Connected {
+					fmt.Println("Subscriber is connected")
+				}
+			}
+		}
 
 		if options.Listen && options.PeerId != "" {
 			fmt.Println(string(message))
