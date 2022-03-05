@@ -30,6 +30,22 @@ func (m Message) MarshalPayload() ([]byte, error) {
 	return data, nil
 }
 
+func (m Message) Marshal() ([]byte, error) {
+	data, err := json.Marshal(m)
+
+	if err != nil {
+		zap.L().Error("Unexpected error while marshaling message", zap.Error(err))
+		return []byte{}, err
+	}
+
+	zap.S().Debugw(
+		"Message was marshaled",
+		"message", string(data),
+	)
+
+	return data, nil
+}
+
 func (m Message) ToLogMessage() (LogMessage, error) {
 	data, err := m.MarshalPayload()
 
@@ -166,6 +182,21 @@ func (payload IdentityMessage) Handle(client *Client, message Message) error {
 	)
 
 	return nil
+}
+
+type SubscriberConnectedMessage struct {
+	Connected bool `json:"connected"`
+}
+
+func (m SubscriberConnectedMessage) Marshal() ([]byte, error) {
+	data, err := json.Marshal(m)
+
+	if err != nil {
+		zap.L().Error("Unexpected error while marshaling SubscriberConnectedMessage", zap.Error(err))
+		return []byte{}, err
+	}
+
+	return data, nil
 }
 
 func HandleMessage(client *Client, message Message) (Message, error) {
