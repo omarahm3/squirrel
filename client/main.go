@@ -80,8 +80,8 @@ func Main() {
 	if !options.Listen {
 		link := fmt.Sprintf("%s/client/%s", options.Domain.Public, clientId)
 
-		fmt.Printf("ID: [ %s ]\n", clientId)
-		fmt.Printf("Link: [ %s ]\n", link)
+		fmt.Printf("➜ ID: [ %s ]\n", clientId)
+		fmt.Printf("➜ Link: [ %s ]\n", link)
 
 		if options.UrlClipboard {
 			err := clipboard.WriteAll(link)
@@ -89,7 +89,8 @@ func Main() {
 			if err != nil {
 				zap.S().Warnw("Error occurred while writing link to clipboard", "error", zap.Error(err))
 			} else {
-				fmt.Println("Url is copied to your clipboard")
+				fmt.Println("➜ Url is copied to your clipboard")
+        fmt.Println("📢 Squirrel is waiting for listeners to begin piping stdout...")
 			}
 		}
 	}
