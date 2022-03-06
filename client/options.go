@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/omarahm3/squirrel/utils"
+	"github.com/omarahm3/squirrel/common"
 	"go.uber.org/zap/zapcore"
 )
 
 type ClientOptions struct {
 	Env          string
-	Domain       *utils.Domain
+	Domain       *common.Domain
 	LogLevel     zapcore.Level
 	PeerId       string
 	Listen       bool
@@ -47,9 +47,9 @@ func InitOptions() *ClientOptions {
 		flag.PrintDefaults()
 	}
 
-	flag.StringVar(&env, "env", utils.WinningDefault(utils.GetEnvVariable("APP_ENV"), env, DEFAULT_ENVIRONMENT), "Client environment (prod|dev)")
-	flag.StringVar(&domain, "domain", utils.WinningDefault(utils.GetEnvVariable("DOMAIN"), domain, DEFAULT_DOMAIN), "Server domain")
-	flag.StringVar(&loglevel, "log", utils.WinningDefault(utils.GetEnvVariable("LOG_LEVEL"), loglevel, DEFAULT_LOG_LEVEL), "Log level")
+	flag.StringVar(&env, "env", common.WinningDefault(common.GetEnvVariable("APP_ENV"), env, DEFAULT_ENVIRONMENT), "Client environment (prod|dev)")
+	flag.StringVar(&domain, "domain", common.WinningDefault(common.GetEnvVariable("DOMAIN"), domain, DEFAULT_DOMAIN), "Server domain")
+	flag.StringVar(&loglevel, "log", common.WinningDefault(common.GetEnvVariable("LOG_LEVEL"), loglevel, DEFAULT_LOG_LEVEL), "Log level")
 	flag.StringVar(&peer, "peer", "", "Peer client ID")
 	flag.BoolVar(&listen, "listen", false, "Initiate in listen mode to listen to peer")
 	flag.BoolVar(&listen, "l", false, "Initiate in listen mode to listen to peer")
@@ -61,8 +61,8 @@ func InitOptions() *ClientOptions {
 
 	return &ClientOptions{
 		Env:          env,
-		Domain:       utils.BuildDomain(domain, env),
-		LogLevel:     utils.GetLogLevelFromString(loglevel),
+		Domain:       common.BuildDomain(domain, env),
+		LogLevel:     common.GetLogLevelFromString(loglevel),
 		PeerId:       peer,
 		Listen:       listen,
 		Output:       output,

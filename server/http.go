@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"github.com/omarahm3/squirrel/utils"
+	"github.com/omarahm3/squirrel/common"
 	"go.uber.org/zap"
 )
 
@@ -41,7 +41,7 @@ func WebsocketHandler(r *http.Request, w http.ResponseWriter) {
 	zap.S().Info("Websocket connection was successful")
 
 	client := &Client{
-		id:          utils.GenerateUUID(),
+		id:          common.GenerateUUID(),
 		connection:  connection,
 		hub:         hub,
 		broadcaster: false,

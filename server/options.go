@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/omarahm3/squirrel/utils"
+	"github.com/omarahm3/squirrel/common"
 	"go.uber.org/zap/zapcore"
 )
 
 type ServerOptions struct {
 	Env             string
-	Domain          *utils.Domain
+	Domain          *common.Domain
 	Port            int
 	LogLevel        zapcore.Level
 	ReadBufferSize  int
@@ -52,22 +52,22 @@ func InitOptions() *ServerOptions {
 		fprintf("%s configures server run.\n", os.Args[0])
 	}
 
-	flag.StringVar(&env, "env", utils.WinningDefault(utils.GetEnvVariable("APP_ENV"), env, DEFAULT_ENVIRONMENT), "Server environment (prod|dev)")
-	flag.StringVar(&domain, "domain", utils.WinningDefault(utils.GetEnvVariable("DOMAIN"), domain, DEFAULT_DOMAIN), "Server domain")
-	flag.StringVar(&loglevel, "log", utils.WinningDefault(utils.GetEnvVariable("LOG_LEVEL"), loglevel, DEFAULT_LOG_LEVEL), "Log level")
-	flag.StringVar(&port, "port", utils.WinningDefault(utils.GetEnvVariable("PORT"), port, DEFAULT_PORT), "Server port")
-	flag.StringVar(&readBufferSize, "read-buffer-size", utils.WinningDefault(utils.GetEnvVariable("READ_BUFFER_SIZE"), readBufferSize, DEFAULT_READ_BUFFER_SIZE), "Websocket read buffer size")
-	flag.StringVar(&writeBufferSize, "write-buffer-size", utils.WinningDefault(utils.GetEnvVariable("WRITE_BUFFER_SIZE"), writeBufferSize, DEFAULT_WRITE_BUFFER_SIZE), "Websocket write buffer size")
-	flag.StringVar(&maxMessageSize, "max-message-size", utils.WinningDefault(utils.GetEnvVariable("MAX_MESSAGE_SIZE"), maxMessageSize, DEFAULT_MAX_MESSAGE_SIZE), "Websocket maximum message size")
+	flag.StringVar(&env, "env", common.WinningDefault(common.GetEnvVariable("APP_ENV"), env, DEFAULT_ENVIRONMENT), "Server environment (prod|dev)")
+	flag.StringVar(&domain, "domain", common.WinningDefault(common.GetEnvVariable("DOMAIN"), domain, DEFAULT_DOMAIN), "Server domain")
+	flag.StringVar(&loglevel, "log", common.WinningDefault(common.GetEnvVariable("LOG_LEVEL"), loglevel, DEFAULT_LOG_LEVEL), "Log level")
+	flag.StringVar(&port, "port", common.WinningDefault(common.GetEnvVariable("PORT"), port, DEFAULT_PORT), "Server port")
+	flag.StringVar(&readBufferSize, "read-buffer-size", common.WinningDefault(common.GetEnvVariable("READ_BUFFER_SIZE"), readBufferSize, DEFAULT_READ_BUFFER_SIZE), "Websocket read buffer size")
+	flag.StringVar(&writeBufferSize, "write-buffer-size", common.WinningDefault(common.GetEnvVariable("WRITE_BUFFER_SIZE"), writeBufferSize, DEFAULT_WRITE_BUFFER_SIZE), "Websocket write buffer size")
+	flag.StringVar(&maxMessageSize, "max-message-size", common.WinningDefault(common.GetEnvVariable("MAX_MESSAGE_SIZE"), maxMessageSize, DEFAULT_MAX_MESSAGE_SIZE), "Websocket maximum message size")
 	flag.Parse()
 
 	return &ServerOptions{
 		Env:             env,
-		Domain:          utils.BuildDomain(domain, env),
-		Port:            utils.StrToInt(port),
-		LogLevel:        utils.GetLogLevelFromString(loglevel),
-		ReadBufferSize:  utils.StrToInt(readBufferSize),
-		WriteBufferSize: utils.StrToInt(writeBufferSize),
-		MaxMessageSize:  utils.StrToInt64(maxMessageSize),
+		Domain:          common.BuildDomain(domain, env),
+		Port:            common.StrToInt(port),
+		LogLevel:        common.GetLogLevelFromString(loglevel),
+		ReadBufferSize:  common.StrToInt(readBufferSize),
+		WriteBufferSize: common.StrToInt(writeBufferSize),
+		MaxMessageSize:  common.StrToInt64(maxMessageSize),
 	}
 }
