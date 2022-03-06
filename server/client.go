@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/omarahm3/squirrel/common"
 	"go.uber.org/zap"
 )
 
@@ -36,13 +37,13 @@ func (client *Client) IsActiveSubscriber() bool {
 	return client.subscriber && client.active && client.peerId != ""
 }
 
-func (client *Client) ReadIncomingMessage() (Message, error) {
+func (client *Client) ReadIncomingMessage() (common.Message, error) {
 	zap.S().Debugw(
 		"Handling client incoming messages",
 		"id", client.id,
 	)
 
-	var message Message
+	var message common.Message
 
 	zap.S().Debugw(
 		"Reading message of client",
@@ -58,7 +59,7 @@ func (client *Client) ReadIncomingMessage() (Message, error) {
 			zap.L().Warn("Unexpected websocket close, peer is disconnected, ignoring message...")
 		}
 
-		return Message{}, err
+		return common.Message{}, err
 	}
 
 	return HandleMessage(client, message)
@@ -132,11 +133,11 @@ func (client *Client) ReadPump() {
 				"id", client.id,
 			)
 
-			ackPayload := &SubscriberConnectedMessage{
+			ackPayload := &common.SubscriberConnectedMessage{
 				Connected: true,
 			}
 
-			ackMessage := Message{
+			ackMessage := common.Message{
 				Id:      "",
 				Payload: ackPayload,
 				Event:   EVENT_SUBSCRIBER_ACK,
