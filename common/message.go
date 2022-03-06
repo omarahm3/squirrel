@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 type Message struct {
@@ -101,6 +102,21 @@ func (m Message) ToIdentityMessage() (IdentityMessage, error) {
 	return identityMessage, nil
 }
 
+func (message Message) MarshalLogObject(encoder zapcore.ObjectEncoder) error {
+	encoder.AddString("id", message.Id)
+	encoder.AddString("Event", message.Event)
+
+	data, err := json.Marshal(message.Payload)
+
+	if err != nil {
+		zap.S().Error("Unexpected error while marshaling payload: ", err, message.Payload)
+		return err
+	}
+
+	encoder.AddString("payload", string(data))
+	return nil
+}
+
 func (m SubscriberConnectedMessage) Marshal() ([]byte, error) {
 	data, err := json.Marshal(m)
 
@@ -110,4 +126,40 @@ func (m SubscriberConnectedMessage) Marshal() ([]byte, error) {
 	}
 
 	return data, nil
+}
+
+func (m Message) ToSubscriberConnectedMessage() (SubscriberConnectedMessage, error) {
+	data, err := m.MarshalPayload()
+
+	if err != nil {
+		zap.L().Error("Unexpected error while marshaling payload", zap.Error(err))
+		return SubscriberConnectedMessage{}, err
+	}
+
+	zap.S().Debugw(
+		"Payload was marshaled",
+		"payload", string(data),
+	)
+
+	message := SubscriberConnectedMessage{}
+	err = json.Unmarshal([]byte(data), &message)
+
+	if err != nil {
+		zap.L().Error("Unexpected error while unmarshaling payload", zap.Error(err))
+		return SubscriberConnectedMessage{}, err
+	}
+
+	return message, nil
+}
+
+func NewMessageFromString(message []byte) (Message, error) {
+	var m Message
+
+	err := json.Unmarshal([]byte(message), &m)
+
+	if err != nil {
+		return Message{}, err
+	}
+
+	return m, nil
 }

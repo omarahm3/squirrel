@@ -120,10 +120,10 @@ func HandleSendEvents(connection *websocket.Conn) {
 	// Here we receive packets
 	for {
 		line := <-input
-		err := connection.WriteJSON(Message{
+		err := connection.WriteJSON(common.Message{
 			Id:    clientId,
 			Event: "log_line",
-			Payload: LogMessage{
+			Payload: common.LogMessage{
 				Line: line,
 			},
 		})
@@ -146,10 +146,10 @@ func SendIdentity(connection *websocket.Conn, clientId string) {
 		broadcaster = false
 	}
 
-	message := Message{
+	message := common.Message{
 		Id:    clientId,
 		Event: EVENT_IDENTITY,
-		Payload: IdentityMessage{
+		Payload: common.IdentityMessage{
 			PeerId:      peerId,
 			Broadcaster: broadcaster,
 			Subscriber:  subscriber,
