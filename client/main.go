@@ -9,7 +9,7 @@ import (
 	"github.com/atotto/clipboard"
 	"github.com/gorilla/websocket"
 	"github.com/inancgumus/screen"
-	"github.com/omarahm3/squirrel/utils"
+	"github.com/omarahm3/squirrel/common"
 	"go.uber.org/zap"
 )
 
@@ -54,7 +54,7 @@ func Main() {
 
 	interrupt = make(chan os.Signal) // Channel to listen for interrupt signal to gracefully terminate
 
-	utils.InitLogging(utils.LoggerOptions{
+	common.InitLogging(common.LoggerOptions{
 		Env:         options.Env,
 		LogLevel:    options.LogLevel,
 		LogFileName: ".squirrel.log",
@@ -65,7 +65,7 @@ func Main() {
 		_ = zap.S().Sync()
 	}()
 
-	clientId = utils.GenerateUUID()
+	clientId = common.GenerateUUID()
 
 	zap.S().Debug("Client ID was generated: ", clientId)
 
@@ -120,10 +120,10 @@ func HandleSendEvents(connection *websocket.Conn) {
 	// Here we receive packets
 	for {
 		line := <-input
-		err := connection.WriteJSON(Message{
+		err := connection.WriteJSON(common.Message{
 			Id:    clientId,
 			Event: "log_line",
-			Payload: LogMessage{
+			Payload: common.LogMessage{
 				Line: line,
 			},
 		})
@@ -146,10 +146,10 @@ func SendIdentity(connection *websocket.Conn, clientId string) {
 		broadcaster = false
 	}
 
-	message := Message{
+	message := common.Message{
 		Id:    clientId,
 		Event: EVENT_IDENTITY,
-		Payload: IdentityMessage{
+		Payload: common.IdentityMessage{
 			PeerId:      peerId,
 			Broadcaster: broadcaster,
 			Subscriber:  subscriber,

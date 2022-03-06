@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
-	"github.com/omarahm3/squirrel/utils"
+	"github.com/omarahm3/squirrel/common"
 	"go.uber.org/zap"
 )
 
@@ -34,7 +34,7 @@ func Main() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	utils.InitLogging(utils.LoggerOptions{
+	common.InitLogging(common.LoggerOptions{
 		Env:         options.Env,
 		LogLevel:    options.LogLevel,
 		LogFileName: ".server.squirrel.log",
@@ -69,7 +69,7 @@ func Main() {
 	err := server.Run(fmt.Sprintf(":%d", options.Port))
 
 	if err != nil {
-		utils.FatalError("Error while running server", err)
+		common.FatalError("Error while running server", err)
 	}
 
 	fmt.Printf("Server is running on http://localhost:%d", options.Port)

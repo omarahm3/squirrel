@@ -1,99 +1,14 @@
 package server
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 
+	"github.com/omarahm3/squirrel/common"
 	"go.uber.org/zap"
 )
 
-type Message struct {
-	Id      string      `json:"id"`
-	Payload interface{} `json:"payload"`
-	Event   string      `json:"event"`
-}
-
-func (m Message) MarshalPayload() ([]byte, error) {
-	data, err := json.Marshal(m.Payload)
-
-	if err != nil {
-		zap.L().Error("Unexpected error while marshaling payload", zap.Error(err))
-		return []byte{}, err
-	}
-
-	zap.S().Debugw(
-		"Payload was marshaled",
-		"payload", string(data),
-	)
-
-	return data, nil
-}
-
-func (m Message) Marshal() ([]byte, error) {
-	data, err := json.Marshal(m)
-
-	if err != nil {
-		zap.L().Error("Unexpected error while marshaling message", zap.Error(err))
-		return []byte{}, err
-	}
-
-	zap.S().Debugw(
-		"Message was marshaled",
-		"message", string(data),
-	)
-
-	return data, nil
-}
-
-func (m Message) ToLogMessage() (LogMessage, error) {
-	data, err := m.MarshalPayload()
-
-	if err != nil {
-		return LogMessage{}, err
-	}
-
-	logMessage := LogMessage{}
-
-	err = json.Unmarshal([]byte(data), &logMessage)
-
-	if err != nil {
-		zap.L().Error("Unexpected error while unmarshaling payload", zap.Error(err))
-		return LogMessage{}, err
-	}
-
-	return logMessage, nil
-}
-
-func (m Message) ToIdentityMessage() (IdentityMessage, error) {
-	data, err := m.MarshalPayload()
-
-	if err != nil {
-		zap.L().Error("Unexpected error while marshaling payload", zap.Error(err))
-		return IdentityMessage{}, err
-	}
-
-	zap.S().Debugw(
-		"Payload was marshaled",
-		"payload", string(data),
-	)
-
-	identityMessage := IdentityMessage{}
-	err = json.Unmarshal([]byte(data), &identityMessage)
-
-	if err != nil {
-		zap.L().Error("Unexpected error while unmarshaling payload", zap.Error(err))
-		return IdentityMessage{}, err
-	}
-
-	return identityMessage, nil
-}
-
-type LogMessage struct {
-	Line string `json:"line"`
-}
-
-func (message LogMessage) Handle(client *Client) {
+func HandleLogMessage(message common.LogMessage, client *Client) {
 	zap.S().Debugw(
 		"Sending new log line message",
 		"message", string(message.Line),
@@ -109,13 +24,7 @@ func (message LogMessage) Handle(client *Client) {
 	}
 }
 
-type IdentityMessage struct {
-	PeerId      string `json:"peerId"`
-	Broadcaster bool   `json:"broadcaster"`
-	Subscriber  bool   `json:"subscriber"`
-}
-
-func (payload IdentityMessage) Handle(client *Client, message Message) error {
+func HandleIdentityMessage(payload common.IdentityMessage, client *Client, message common.Message) error {
 	zap.S().Debugw(
 		"Handling identity message",
 		"event", string(message.Event),
@@ -184,40 +93,25 @@ func (payload IdentityMessage) Handle(client *Client, message Message) error {
 	return nil
 }
 
-type SubscriberConnectedMessage struct {
-	Connected bool `json:"connected"`
-}
-
-func (m SubscriberConnectedMessage) Marshal() ([]byte, error) {
-	data, err := json.Marshal(m)
-
-	if err != nil {
-		zap.L().Error("Unexpected error while marshaling SubscriberConnectedMessage", zap.Error(err))
-		return []byte{}, err
-	}
-
-	return data, nil
-}
-
-func HandleMessage(client *Client, message Message) (Message, error) {
+func HandleMessage(client *Client, message common.Message) (common.Message, error) {
 	switch message.Event {
 	case EVENT_IDENTITY:
 		identityMessage, err := message.ToIdentityMessage()
 
 		if err != nil {
-			return Message{}, err
+			return common.Message{}, err
 		}
 
-		err = identityMessage.Handle(client, message)
+		err = HandleIdentityMessage(identityMessage, client, message)
 
 		if err != nil {
-			return Message{}, err
+			return common.Message{}, err
 		}
 
 	case EVENT_LOG_LINE:
 		if !client.active {
 			zap.L().Warn("Client is not active yet, ignoring message")
-			return Message{}, errors.New("Client is not active yet, ignoring messages")
+			return common.Message{}, errors.New("Client is not active yet, ignoring messages")
 		}
 
 		zap.S().Debug("Incoming log_line event, preparing log message")
@@ -225,10 +119,10 @@ func HandleMessage(client *Client, message Message) (Message, error) {
 		logMessage, err := message.ToLogMessage()
 
 		if err != nil {
-			return Message{}, err
+			return common.Message{}, err
 		}
 
-		logMessage.Handle(client)
+		HandleLogMessage(logMessage, client)
 	}
 
 	return message, nil
