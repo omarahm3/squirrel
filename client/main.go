@@ -90,7 +90,7 @@ func Main() {
 				zap.S().Warnw("Error occurred while writing link to clipboard", "error", zap.Error(err))
 			} else {
 				fmt.Println("➜ Url is copied to your clipboard")
-        fmt.Println("📢 Squirrel is waiting for listeners to begin piping stdout...")
+				fmt.Println("📢 Squirrel is waiting for listeners to begin piping stdout...")
 			}
 		}
 	}
