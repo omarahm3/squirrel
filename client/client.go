@@ -104,7 +104,6 @@ func InitClient() *websocket.Conn {
 
 	if err != nil {
 		zap.S().Error("Error connecting to websocket server: ", err)
-		uiWriter.Stop()
 		os.Exit(1)
 	}
 

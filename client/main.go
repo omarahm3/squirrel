@@ -8,7 +8,7 @@ import (
 
 	"github.com/atotto/clipboard"
 	"github.com/gorilla/websocket"
-	"github.com/gosuri/uilive"
+	"github.com/inancgumus/screen"
 	"github.com/omarahm3/squirrel/utils"
 	"go.uber.org/zap"
 )
@@ -23,7 +23,6 @@ var (
 	interrupt  chan os.Signal
 	options    *ClientOptions
 	clientId   string
-	uiWriter   *uilive.Writer
 	controller = make(chan int)
 	events     = make(chan string)
 	input      = make(chan string)
@@ -39,7 +38,6 @@ func isStdin() bool {
 
 	if err != nil {
 		fmt.Println("Couldn't check STDIN: ", err)
-		uiWriter.Stop()
 		os.Exit(1)
 	}
 
@@ -48,12 +46,9 @@ func isStdin() bool {
 
 func Main() {
 	options = InitOptions()
-	uiWriter = uilive.New()
-	uiWriter.Start()
 
 	if !options.Listen && !isStdin() {
-		fmt.Fprintln(uiWriter, "Nothing is being read, you should pipe something to stdin of this command")
-    uiWriter.Stop()
+		fmt.Println("Nothing is being read, you should pipe something to stdin of this command")
 		return
 	}
 
@@ -85,8 +80,8 @@ func Main() {
 	if !options.Listen {
 		link := fmt.Sprintf("%s/client/%s", options.Domain.Public, clientId)
 
-		fmt.Fprintf(uiWriter, "ID: [ %s ]\n", clientId)
-		fmt.Fprintf(uiWriter, "Link: [ %s ]\n", link)
+		fmt.Printf("ID: [ %s ]\n", clientId)
+		fmt.Printf("Link: [ %s ]\n", link)
 
 		if options.UrlClipboard {
 			err := clipboard.WriteAll(link)
@@ -94,7 +89,7 @@ func Main() {
 			if err != nil {
 				zap.S().Warnw("Error occurred while writing link to clipboard", "error", zap.Error(err))
 			} else {
-				fmt.Fprintln(uiWriter, "Url is copied to your clipboard")
+				fmt.Println("Url is copied to your clipboard")
 			}
 		}
 	}
@@ -108,10 +103,8 @@ func Main() {
 		select {
 		case <-interrupt:
 			zap.S().Info("Received SIGINT interrupt signal. Closing all pending connections")
-      uiWriter.Stop()
 			return
 		case <-controller:
-      uiWriter.Stop()
 			return
 		}
 	}
@@ -180,7 +173,8 @@ func HandleEvents() {
 
 		switch event {
 		case EVENT_SUBSCRIBER_ACK:
-      uiWriter.Flush()
+			screen.Clear()
+			screen.MoveTopLeft()
 			go ScanFile()
 		}
 	}
@@ -194,7 +188,7 @@ func ScanFile() {
 		text := scanner.Text()
 
 		if options.Output {
-			fmt.Fprintln(uiWriter, text)
+			fmt.Println(text)
 		}
 
 		input <- text
