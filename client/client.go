@@ -1,7 +1,6 @@
 package client
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 
@@ -23,11 +22,6 @@ func InitClient() *websocket.Conn {
 	zap.S().Debug("Websocket connection was successful")
 
 	return connection
-}
-
-func isJSON(s string) bool {
-	var js map[string]interface{}
-	return json.Unmarshal([]byte(s), &js) == nil
 }
 
 func handleIncomingJSONMessages(message []byte) error {
@@ -61,7 +55,7 @@ func HandleIncomingMessages(connection *websocket.Conn) {
 	for {
 		_, message, err := connection.ReadMessage()
 
-		if isJSON(string(message)) {
+		if common.IsJSON(string(message)) {
 			err := handleIncomingJSONMessages(message)
 
 			if err != nil {

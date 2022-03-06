@@ -1,6 +1,7 @@
 package common
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/url"
@@ -151,4 +152,9 @@ func BuildDomain(domain string, env string) *Domain {
 		Public:    public.String(),
 		Websocket: websocket.String(),
 	}
+}
+
+func IsJSON(s string) bool {
+	var js map[string]interface{}
+	return json.Unmarshal([]byte(s), &js) == nil
 }
