@@ -8,6 +8,7 @@ import (
 
 	"github.com/atotto/clipboard"
 	"github.com/gorilla/websocket"
+	"github.com/inancgumus/screen"
 	"github.com/omarahm3/squirrel/utils"
 	"go.uber.org/zap"
 )
@@ -18,10 +19,19 @@ type ControllerMessage struct {
 	Connection *websocket.Conn
 }
 
-var interrupt chan os.Signal
-var options *ClientOptions
-var clientId string
-var controller = make(chan int)
+var (
+	interrupt  chan os.Signal
+	options    *ClientOptions
+	clientId   string
+	controller = make(chan int)
+	events     = make(chan string)
+	input      = make(chan string)
+)
+
+const (
+	EVENT_IDENTITY       = "identity"
+	EVENT_SUBSCRIBER_ACK = "subscriber_ack"
+)
 
 func isStdin() bool {
 	stat, err := os.Stdin.Stat()
@@ -43,7 +53,6 @@ func Main() {
 	}
 
 	interrupt = make(chan os.Signal) // Channel to listen for interrupt signal to gracefully terminate
-	input := make(chan string)
 
 	utils.InitLogging(utils.LoggerOptions{
 		Env:         options.Env,
@@ -71,8 +80,8 @@ func Main() {
 	if !options.Listen {
 		link := fmt.Sprintf("%s/client/%s", options.Domain.Public, clientId)
 
-		fmt.Printf("ID: [ %s ]\n", clientId)
-		fmt.Printf("Link: [ %s ]\n", link)
+		fmt.Printf("➜ ID: [ %s ]\n", clientId)
+		fmt.Printf("➜ Link: [ %s ]\n", link)
 
 		if options.UrlClipboard {
 			err := clipboard.WriteAll(link)
@@ -80,13 +89,14 @@ func Main() {
 			if err != nil {
 				zap.S().Warnw("Error occurred while writing link to clipboard", "error", zap.Error(err))
 			} else {
-				fmt.Println("Url is copied to your clipboard")
+				fmt.Println("➜ Url is copied to your clipboard")
+        fmt.Println("📢 Squirrel is waiting for listeners to begin piping stdout...")
 			}
 		}
 	}
 
-	go ScanFile(input)
-	go HandleSendEvents(input, connection)
+	go HandleEvents()
+	go HandleSendEvents(connection)
 	go HandleIncomingMessages(connection)
 
 	// Main CLI loop
@@ -101,7 +111,7 @@ func Main() {
 	}
 }
 
-func HandleSendEvents(input chan string, connection *websocket.Conn) {
+func HandleSendEvents(connection *websocket.Conn) {
 	defer func() {
 		connection.Close()
 		zap.S().Info("Client connection closed")
@@ -138,7 +148,7 @@ func SendIdentity(connection *websocket.Conn, clientId string) {
 
 	message := Message{
 		Id:    clientId,
-		Event: "identity",
+		Event: EVENT_IDENTITY,
 		Payload: IdentityMessage{
 			PeerId:      peerId,
 			Broadcaster: broadcaster,
@@ -158,7 +168,20 @@ func SendIdentity(connection *websocket.Conn, clientId string) {
 	}
 }
 
-func ScanFile(input chan string) {
+func HandleEvents() {
+	for {
+		event := <-events
+
+		switch event {
+		case EVENT_SUBSCRIBER_ACK:
+			screen.Clear()
+			screen.MoveTopLeft()
+			go ScanFile()
+		}
+	}
+}
+
+func ScanFile() {
 	zap.S().Debug("Scanning log file")
 
 	scanner := bufio.NewScanner(os.Stdin)

@@ -9,11 +9,12 @@ import (
 )
 
 const (
-	WRITE_WAIT     = 10 * time.Second
-	PONG_WAIT      = 60 * time.Second
-	PING_PERIOD    = (PONG_WAIT * 9) / 10
-	EVENT_IDENTITY = "identity"
-	EVENT_LOG_LINE = "log_line"
+	WRITE_WAIT           = 10 * time.Second
+	PONG_WAIT            = 60 * time.Second
+	PING_PERIOD          = (PONG_WAIT * 9) / 10
+	EVENT_IDENTITY       = "identity"
+	EVENT_LOG_LINE       = "log_line"
+	EVENT_SUBSCRIBER_ACK = "subscriber_ack"
 )
 
 type Client struct {
@@ -117,28 +118,43 @@ func (client *Client) ReadPump() {
 	})
 
 	for {
-		message, err := client.ReadIncomingMessage()
+		_, err := client.ReadIncomingMessage()
 
 		if err != nil {
 			zap.L().Error("Error handling message, disconnecting peer", zap.Error(err), zap.String("peerId", client.id))
 			return
 		}
 
-		// If this is a broadcaster client sending us the very first request
-		if !client.broadcaster && message.Id != "" {
+		if client.IsActiveSubscriber() {
 			zap.S().Debugw(
-				"Broadcaster client connection, updating client ID",
-				"oldId", client.id,
-				"newId", message.Id,
+				"Client is active subscriber",
+				"peerId", client.peerId,
+				"id", client.id,
 			)
 
-			oldId := client.id
-			client.id = message.Id
+			ackPayload := &SubscriberConnectedMessage{
+				Connected: true,
+			}
 
-			client.hub.update <- struct {
-				id     string
-				client *Client
-			}{oldId, client}
+			ackMessage := Message{
+				Id:      "",
+				Payload: ackPayload,
+				Event:   EVENT_SUBSCRIBER_ACK,
+			}
+
+			message, err := ackMessage.Marshal()
+
+			if err != nil {
+				return
+			}
+
+			client.hub.send <- struct {
+				message  []byte
+				clientId string
+			}{
+				message:  message,
+				clientId: client.peerId,
+			}
 		}
 	}
 }
