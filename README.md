@@ -1,5 +1,5 @@
 # 🐿️ Squirrel
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)[![Github: CI](https://img.shields.io/github/workflow/status/omarahm3/switcher/CI/master)](https://github.com/omarahm3/switcher/actions)[![Twitter: omarahm3](https://img.shields.io/twitter/follow/omarahm3.svg?style=social)](https://twitter.com/omarahm3)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)[![Github: CI](https://img.shields.io/github/workflow/status/omarahm3/squirrel/CI/master)](https://github.com/omarahm3/squirrel/actions)[![Twitter: omarahm3](https://img.shields.io/twitter/follow/omarahm3.svg?style=social)](https://twitter.com/omarahm3)
 
 Realtime logs (or any stdout basically!) sharing by just piping squirrel.
 
