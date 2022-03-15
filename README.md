@@ -38,7 +38,7 @@ mv ./squirrel ~/.local/bin/
 Or if you have go installed, you can always install squirrel client as a Go package by doing so:
 
 ```bash
-go install github.com/omarahm3/squirrel/main/squirrel
+go install github.com/omarahm3/squirrel/cmd/squirrel@latest
 ```
 
 ***Note**: Installing squirrel as a go package will install it as a development ready package, which is going to need to be configured either by Environment variables or passing options to the CLI, Refer to [configuration](#Configuration) section for more details*

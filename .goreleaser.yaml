@@ -7,7 +7,7 @@ before:
     # you may remove this if you don't need go generate
     - go generate ./...
 builds:
-  - main: ./main/squirrel
+  - main: ./cmd/squirrel
     id: squirrel
     binary: squirrel
     ldflags:
@@ -24,7 +24,7 @@ builds:
       - amd64
       - arm64
 
-  - main: ./main/squirreld
+  - main: ./cmd/squirreld
     id: squirreld
     binary: squirreld
     ldflags:
