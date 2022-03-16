@@ -1,0 +1,38 @@
+FROM golang:1.17.8-bullseye
+
+ARG APP_ENV=dev
+ENV APP_ENV=$APP_ENV
+ARG DOMAIN=localhost
+ENV DOMAIN=$DOMAIN
+ARG LOG_LEVEL=debug
+ENV LOG_LEVEL=$LOG_LEVEL
+ARG PORT=3000
+ENV PORT=$PORT
+ARG READ_BUFFER_SIZE=0
+ENV READ_BUFFER_SIZE=$READ_BUFFER_SIZE
+ARG WRITE_BUFFER_SIZE=0
+ENV WRITE_BUFFER_SIZE=$WRITE_BUFFER_SIZE
+
+WORKDIR /server
+
+COPY go.* /
+
+RUN go mod download
+
+COPY . .
+
+RUN go build \
+  -v \
+  -ldflags "-X 'github.com/omarahm3/squirrel/server.domain=$DOMAIN'" \
+  -ldflags "-X 'github.com/omarahm3/squirrel/server.loglevel=$LOG_LEVEL'"\
+  -ldflags "-X 'github.com/omarahm3/squirrel/server.env=$APP_ENV'"\
+  -ldflags "-X 'github.com/omarahm3/squirrel/server.port=$PORT'"\
+  -ldflags "-X 'github.com/omarahm3/squirrel/server.readBufferSize=$READ_BUFFER_SIZE'"\
+  -ldflags "-X 'github.com/omarahm3/squirrel/server.writeBufferSize=$PORT'"\
+  ./cmd/squirreld
+
+RUN mv squirreld /squirreld
+
+EXPOSE $PORT
+
+CMD [ "/squirreld" ]

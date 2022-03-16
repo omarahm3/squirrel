@@ -23,6 +23,8 @@ builds:
     goarch:
       - amd64
       - arm64
+    env:
+      - CGO_ENABLED=0
 
   - main: ./cmd/squirreld
     id: squirreld
@@ -40,6 +42,8 @@ builds:
       - linux
     goarch:
       - amd64
+    env:
+      - CGO_ENABLED=0
 dockers:
   - id: squirreld
     ids:
@@ -49,11 +53,31 @@ dockers:
     image_templates:
       - "omarahm3/squirreld:latest"
       - "omarahm3/squirreld:{{ .Tag }}"
-    dockerfile: Dockerfile
+    dockerfile: Dockerfile.squirreld
     build_flag_templates:
       - --platform=linux/amd64
-      - --label=org.opencontainers.image.title={{ .ProjectName }}
-      - --label=org.opencontainers.image.description={{ .ProjectName }}
+      - --label=org.opencontainers.image.title=squirreld
+      - --label=org.opencontainers.image.description=squirreld daemon server that receives and route peers' messages
+      - --label=org.opencontainers.image.url=https://github.com/omarahm3/squirrel
+      - --label=org.opencontainers.image.source=https://github.com/omarahm3/squirrel
+      - --label=org.opencontainers.image.version={{ .Version }}
+      - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
+      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+      - --label=org.opencontainers.image.licenses=MIT
+        
+  - id: squirrel
+    ids:
+      - squirrel
+    goos: linux
+    goarch: amd64
+    image_templates:
+      - "omarahm3/squirrel:latest"
+      - "omarahm3/squirrel:{{ .Tag }}"
+    dockerfile: Dockerfile.squirrel
+    build_flag_templates:
+      - --platform=linux/amd64
+      - --label=org.opencontainers.image.title=squirrel
+      - --label=org.opencontainers.image.description=squirrel CLI that you can pipe to stdout to share logs
       - --label=org.opencontainers.image.url=https://github.com/omarahm3/squirrel
       - --label=org.opencontainers.image.source=https://github.com/omarahm3/squirrel
       - --label=org.opencontainers.image.version={{ .Version }}
