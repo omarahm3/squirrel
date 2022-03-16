@@ -4,21 +4,21 @@ fmt:
 	gofmt -s -w .
 
 server: fmt
-	go run ./main/squirreld
+	go run ./cmd/squirreld
 
 build-server:
-	go build ./main/squirreld
+	go build ./cmd/squirreld
 
 client: fmt
-	go run ./main/squirrel
+	go run ./cmd/squirrel
 
 build-client:
-	go build ./main/squirrel
+	go build ./cmd/squirrel
 
 clean:
 	go clean -i -r ./main
 
 build:
-	for target in `ls ./main`; do \
-		$(BUILD_ENV_FLAGS) go build ./main/$$target; \
+	for target in `ls ./cmd`; do \
+		$(BUILD_ENV_FLAGS) go build ./cmd/$$target; \
 	done
