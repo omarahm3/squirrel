@@ -1,6 +1,7 @@
 package server
 
 import (
+	_ "embed"
 	"fmt"
 
 	"github.com/gin-gonic/gin"
@@ -12,6 +13,12 @@ var (
 	options *ServerOptions
 	hub     *Hub
 	server  *gin.Engine
+	//go:embed view/index.html
+	mainHtmlView string
+)
+
+const (
+	HTML_MAIN_INDEX = "index.html"
 )
 
 func printOptions() {
@@ -60,13 +67,19 @@ func Main() {
 
 	zap.S().Debug("Loading server HTML files")
 
-	server.LoadHTMLFiles("./server/view/index.html")
+	err := common.LoadHtmlTemplates(server, map[string]string{
+		HTML_MAIN_INDEX: mainHtmlView,
+	})
+
+	if err != nil {
+		common.FatalError("Error while loading static HTML files", err)
+	}
 
 	InitHttpServer()
 
 	zap.S().Debugf("Running server on port [%d]\n", options.Port)
 
-	err := server.Run(fmt.Sprintf(":%d", options.Port))
+	err = server.Run(fmt.Sprintf(":%d", options.Port))
 
 	if err != nil {
 		common.FatalError("Error while running server", err)
