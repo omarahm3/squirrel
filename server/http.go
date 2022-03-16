@@ -13,7 +13,7 @@ func InitHttpServer() {
 	zap.S().Debug("Initializing server routes")
 
 	server.GET("/", func(context *gin.Context) {
-		context.HTML(200, "index.html", nil)
+		context.HTML(200, HTML_MAIN_INDEX, nil)
 	})
 
 	server.GET("/ws", func(context *gin.Context) {
@@ -75,7 +75,7 @@ func SubscriberView(context *gin.Context) {
 
 	zap.S().Debugf("Client ID: [%s] was found on hub\n", clientId)
 
-	context.HTML(200, "index.html", gin.H{
+	context.HTML(200, HTML_MAIN_INDEX, gin.H{
 		"clientId": clientId,
 		"domain":   options.Domain.Websocket,
 	})
