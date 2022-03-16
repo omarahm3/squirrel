@@ -21,8 +21,6 @@ RUN go mod download
 
 COPY . .
 
-RUN echo $DOMAIN
-
 RUN go build \
   -v \
   -ldflags "-X 'github.com/omarahm3/squirrel/server.domain=$DOMAIN'" \
