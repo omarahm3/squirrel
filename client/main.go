@@ -9,7 +9,7 @@ import (
 	"github.com/atotto/clipboard"
 	"github.com/gorilla/websocket"
 	"github.com/inancgumus/screen"
-	"github.com/omarahm3/squirrel/common"
+	"github.com/omarahm3/squirrel/internal/pkg/common"
 	"go.uber.org/zap"
 )
 

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/omarahm3/squirrel/common"
+	"github.com/omarahm3/squirrel/internal/pkg/common"
 	"go.uber.org/zap"
 )
 
