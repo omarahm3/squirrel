@@ -18,7 +18,7 @@ Realtime logs (or any stdout basically!) sharing by just piping squirrel.
 - Because why not?
 
 ## Setup
-Currently can head over to [releases](https://github.com/omarahm3/squirrel/releases), on the latest release, and choose the suitable package for you. Currently this was tested on Ubuntu and OSX Monterey only though
+Currently can head over to [releases](https://github.com/omarahm3/squirrel/releases), and choose the suitable package for you. Currently this was tested on Ubuntu and OSX Monterey only though
 
 If you're on Linux, then you can choose the package based on your distribution and install it, for example on Ubuntu/Debian:
 
@@ -42,6 +42,27 @@ go install github.com/omarahm3/squirrel/cmd/squirrel@latest
 ```
 
 ***Note**: Installing squirrel as a go package will install it as a development ready package, which is going to need to be configured either by Environment variables or passing options to the CLI, Refer to [configuration](#Configuration) section for more details*
+
+## Docker
+Squirrel is available as a docker image that you can use directly as well, run squirrel:
+
+```bash
+# Help command
+docker run -i omarahm3/squirrel:latest squirrel -h
+# You can also pipe it like this
+cat myfile.txt | docker run -i omarahm3/squirrel:latest squirrel -o -u
+```
+
+Squirreld (daemon/server) is also available via docker, and high customizable using either flags, or environment variables, check [configuration](#Configuration) to know how to customize it accordingly
+
+```bash
+# Help command
+docker run -i omarahm3/squirreld:latest squirreld -h
+# Configure it using flags
+docker run -i omarahm3/squirreld:latest squirreld -domain=localhost -env=dev -log=debug -port=3000
+# or using environment variables
+docker run -e DOMAIN=localhost -e APP_ENV=dev -e LOG_LEVEL=debug -e PORT=3000 -i omarahm3/squirreld:latest squirreld
+```
 
 ## Squirreling
 Squirrel has no commands, the only way it can be used is via piping it to stdout of another command, for example 
