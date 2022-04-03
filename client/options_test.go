@@ -1,8 +1,6 @@
 package client
 
 import (
-	"flag"
-	"io"
 	"os"
 	"reflect"
 	"testing"
@@ -140,7 +138,7 @@ func TestInitOptions(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
 			oldArgs := os.Args
-			defer resetTesting(oldArgs)
+			defer ResetTesting(oldArgs)
 
 			os.Args = test.args
 			options := InitOptions()
@@ -150,14 +148,4 @@ func TestInitOptions(t *testing.T) {
 			}
 		})
 	}
-}
-
-// Globals that needs to be resetter on each round of test
-func resetTesting(oldArgs []string) {
-	// Reset args
-	os.Args = oldArgs
-
-	// Reset flags
-	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
-	flag.CommandLine.SetOutput(io.Discard)
 }
