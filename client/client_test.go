@@ -10,30 +10,6 @@ import (
 	"github.com/omarahm3/squirrel/internal/pkg/common"
 )
 
-func echo(w http.ResponseWriter, r *http.Request) {
-	connection, err := websocket.Upgrade(w, r, nil, 0, 0)
-
-	if err != nil {
-		return
-	}
-
-	defer connection.Close()
-
-	for {
-		messageType, message, err := connection.ReadMessage()
-
-		if err != nil {
-			break
-		}
-
-		err = connection.WriteMessage(messageType, message)
-
-		if err != nil {
-			break
-		}
-	}
-}
-
 func TestInitClient(t *testing.T) {
 	defer ResetTesting(nil)
 	options = InitOptions()
@@ -64,8 +40,8 @@ func TestInitClient(t *testing.T) {
 }
 
 func TestClientSubscriberAckMessage(t *testing.T) {
-  events  = make(chan string)
-  
+	events = make(chan string)
+
 	defer ResetTesting(nil)
 	options = InitOptions()
 
@@ -81,20 +57,44 @@ func TestClientSubscriberAckMessage(t *testing.T) {
 		Id:    clientId,
 		Event: EVENT_SUBSCRIBER_ACK,
 		Payload: common.SubscriberConnectedMessage{
-      Connected: true,
+			Connected: true,
 		},
 	}
 
-  connection.WriteJSON(jsonMessage)
+	connection.WriteJSON(jsonMessage)
 
-  go HandleIncomingMessages(connection)
-  
-  // Subscriber must be connected so that we receive message on events channel
-  event := <-events
+	go HandleIncomingMessages(connection)
 
-  if event != jsonMessage.Event {
-    t.Errorf("expected %q, actual %q", jsonMessage.Event, event)
-  }
+	// Subscriber must be connected so that we receive message on events channel
+	event := <-events
+
+	if event != jsonMessage.Event {
+		t.Errorf("expected %q, actual %q", jsonMessage.Event, event)
+	}
+}
+
+func echo(w http.ResponseWriter, r *http.Request) {
+	connection, err := websocket.Upgrade(w, r, nil, 0, 0)
+
+	if err != nil {
+		return
+	}
+
+	defer connection.Close()
+
+	for {
+		messageType, message, err := connection.ReadMessage()
+
+		if err != nil {
+			break
+		}
+
+		err = connection.WriteMessage(messageType, message)
+
+		if err != nil {
+			break
+		}
+	}
 }
 
 func overrideClientOptionsDomain(server *httptest.Server) {
