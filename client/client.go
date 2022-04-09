@@ -39,11 +39,43 @@ func handleIncomingJSONMessages(message []byte) error {
 		}
 
 		if m.Connected {
-			events <- EVENT_SUBSCRIBER_ACK
+			select {
+			case events <- EVENT_SUBSCRIBER_ACK:
+				zap.S().Debug("sent subscriber_ack event")
+			default:
+				zap.S().Debug("no events were sent")
+			}
 		}
 	}
 
 	return nil
+}
+
+func readIncomingMessages(connection *websocket.Conn) bool {
+	_, message, err := connection.ReadMessage()
+
+	if common.IsJSON(string(message)) {
+		err := handleIncomingJSONMessages(message)
+
+		if err != nil {
+			return false
+		}
+	}
+
+	if options.Listen && options.PeerId != "" {
+		fmt.Println(string(message))
+	}
+
+	if err != nil {
+		HandleWebsocketClose(ControllerMessage{
+			Error:      err,
+			Connection: connection,
+			Message:    "Error while reading incoming message",
+		})
+		return false
+	}
+
+	return true
 }
 
 func HandleIncomingMessages(connection *websocket.Conn) {
@@ -53,26 +85,9 @@ func HandleIncomingMessages(connection *websocket.Conn) {
 	}()
 
 	for {
-		_, message, err := connection.ReadMessage()
+		result := readIncomingMessages(connection)
 
-		if common.IsJSON(string(message)) {
-			err := handleIncomingJSONMessages(message)
-
-			if err != nil {
-				break
-			}
-		}
-
-		if options.Listen && options.PeerId != "" {
-			fmt.Println(string(message))
-		}
-
-		if err != nil {
-			HandleWebsocketClose(ControllerMessage{
-				Error:      err,
-				Connection: connection,
-				Message:    "Error while reading incoming message",
-			})
+		if !result {
 			break
 		}
 	}
