@@ -8,10 +8,10 @@ import (
 
 // Globals that needs to be resetter on each round of test
 func ResetTesting(oldArgs []string) {
-  if oldArgs == nil {
-    oldArgs = []string{"squirrel"}
-  }
-  
+	if oldArgs == nil {
+		oldArgs = []string{"squirrel"}
+	}
+
 	// Reset args
 	os.Args = oldArgs
 

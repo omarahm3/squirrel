@@ -6,11 +6,17 @@ fmt:
 server: fmt
 	go run ./cmd/squirreld
 
+server-race:
+	go run -race ./cmd/squirreld
+
 build-server:
 	go build ./cmd/squirreld
 
 client: fmt
 	go run ./cmd/squirrel
+
+client-race:
+	go run -race ./cmd/squirrel
 
 build-client:
 	go build ./cmd/squirrel

@@ -1,8 +1,10 @@
 package client
 
 import (
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
@@ -40,9 +42,9 @@ func TestInitClient(t *testing.T) {
 }
 
 func TestClientSubscriberAckMessage(t *testing.T) {
-	events = make(chan string)
-
 	defer ResetTesting(nil)
+	defer close(events)
+
 	options = InitOptions()
 
 	server := newServer()
@@ -63,13 +65,66 @@ func TestClientSubscriberAckMessage(t *testing.T) {
 
 	connection.WriteJSON(jsonMessage)
 
-	go HandleIncomingMessages(connection)
+	readIncomingMessages(connection)
 
 	// Subscriber must be connected so that we receive message on events channel
-	event := <-events
+	select {
+	case event := <-events:
+		if event != jsonMessage.Event {
+			t.Errorf("expected %q, actual %q", jsonMessage.Event, event)
+		}
+		close(events)
+	default:
+	}
+}
 
-	if event != jsonMessage.Event {
-		t.Errorf("expected %q, actual %q", jsonMessage.Event, event)
+func TestSendingLogMessageToSubscriber(t *testing.T) {
+	defer ResetTesting(nil)
+
+	options = InitOptions()
+	options.PeerId = "test"
+	options.Listen = true
+
+	server := newServer()
+	defer server.Close()
+
+	overrideClientOptionsDomain(server)
+
+	connection := InitClient()
+	defer connection.Close()
+
+	message := "Log line test"
+
+	err := connection.WriteMessage(websocket.TextMessage, []byte(message))
+
+	if err != nil {
+		t.Fatal("error sending log message", err)
+	}
+
+	old := os.Stdout
+	r, w, err := os.Pipe()
+
+	if err != nil {
+		t.Fatal("error occurred", err)
+	}
+
+	os.Stdout = w
+
+	readIncomingMessages(connection)
+	w.Close()
+
+	os.Stdout = old
+
+	out, err := io.ReadAll(r)
+
+	if err != nil {
+		t.Fatal("error occurred", err)
+	}
+
+	m := strings.Trim(string(out), "\n")
+
+	if message != m {
+		t.Errorf("expected %q, actual %q", message, m)
 	}
 }
 
